@@ -149,9 +149,8 @@ ruby rt{font-size:.5em;font-weight:400}
       せってい</button>
   </div>
   <h1 class="title">ポーズで ゲーム<span class="n">2</span></h1>
-  <p class="lead"><ruby>手<rt>て</rt></ruby>と<ruby>足<rt>あし</rt></ruby>で <ruby>的<rt>まと</rt></ruby>に タッチしよう。<ruby>的<rt>まと</rt></ruby>は、<ruby>体<rt>からだ</rt></ruby>の <ruby>大<rt>おお</rt></ruby>きさに あわせて、とどく ところに <ruby>出<rt>で</rt></ruby>るよ。</p>
+  <p class="lead">ゲームを<ruby>選<rt>えら</rt></ruby>んで「せってい」を<ruby>押<rt>お</rt></ruby>すと、それぞれのゲームを<ruby>細<rt>こま</rt></ruby>かく<ruby>調整<rt>ちょうせい</rt></ruby>できます。</p>
   <div class="modes" id="modes"></div>
-  <div class="quick" id="quick"></div>
   <p class="summary" id="summary"></p>
   <button class="go" id="btnGo">はじめる</button>
   <p class="note">プロジェクターに うつして、<ruby>体<rt>からだ</rt></ruby>ぜんたいが <ruby>足<rt>あし</rt></ruby>もとまで うつるように はなれてね（2.5〜3メートルくらい）。</p>
@@ -165,7 +164,7 @@ ruby rt{font-size:.5em;font-weight:400}
     <button class="stop" id="btnStop">やめる</button>
     <div class="pill" id="hudScore" hidden>できた 0</div>
     <div class="grow"></div>
-    <div class="pill" id="hudTime" hidden>のこり 60秒</div>
+    <div class="pill" id="hudTime" hidden>のこり 30秒</div>
     <div class="grow" id="hudGrow2" hidden></div>
     <div class="pill" id="hudScore2" hidden>できた 0</div>
   </div>
@@ -240,17 +239,17 @@ const HAND_LM = { R:{w:16,i:20,p:18}, L:{w:15,i:19,p:17} };
 const FOOT_LM = { R:[28,30,32], L:[27,29,31] };
 const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
 const PTS = ['RH','LH','RF','LF','HD'];
-const STORE_KEY = 'poseGame2_v1';
+const STORE_KEY = 'poseGame2_v2';
 const HELP_KEY = 'poseGame2_help_v1';
 let DEMO = false;
 try{ DEMO = new URLSearchParams(location.search).has('demo'); }catch(e){}
 
 /* ================= 設定 ================= */
 const DEF = {
-  mode:'touch', players:1, team:'vs', time:60,
-  hand:'both', foot:'none', lr:true, how:'one', keep:0, skip:0, size:'m',
-  reach:'normal', low:false,
-  poseHand:['ue','kata','yoko','yuka'], poseFoot:['sukoshi','takaku'], poseOrder:'seq', poseSquat:false,
+  mode:'touch', players:1, team:'vs', time:30,
+  hand:'both', foot:'none', lr:false, how:'one', keep:2, skip:0, size:'m',
+  reach:'normal', low:true,
+  poseHand:['ue','kata','yoko','yuka'], poseFoot:['sukoshi','takaku'], poseOrder:'seq', poseSquat:true,
   balFoot:'takaku', balHand:'yoko', balKeep:3,
   colOne:'#1FA85A', colR:'#E5487A', colL:'#1AA6C9', colP1:'#F07A18', colP2:'#7C4DDB',
   camera:'user', mirror:true, video:'full', model:'full', sound:true
@@ -461,10 +460,7 @@ function buildRow(it){
   if(hint){ const h=document.createElement('p'); h.className='hint'; h.innerHTML=hint; row.appendChild(h); }
   return row;
 }
-function renderQuick(){
-  const box = $('quick'); box.innerHTML='';
-  SCHEMA.forEach(it=>{ if(!it.quick) return; if(it.show && !it.show()) return; box.appendChild(buildRow(it)); });
-}
+function renderQuick(){}
 function renderSettings(){
   const body = $('setBody'); body.innerHTML='';
   let grpOn = true;
