@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ポーズでゲーム2</title>
+<meta name="description" content="カメラに映った自分をプロジェクターで大きく映して、手と足でまとにタッチする体操ゲーム。右手・左手・右足・左足を選べて、まとはその人の体の大きさに合わせて届く場所にだけ出ます。タッチ・ポーズ・バランスの3つのあそび。">
+<meta property="og:title" content="ポーズでゲーム2">
+<meta property="og:description" content="手と足でまとにタッチする体操ゲーム。体の大きさに合わせて、届く場所にだけまとが出ます。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F3F6F9; --panel:#FFFFFF; --ink:#1E2833; --sub:#5A6878; --line:#D5DDE6;
+  --main:#12906A; --main-ink:#FFFFFF; --off:#E9EDF2;
+  --font:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font);
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}
+button{font-family:var(--font);color:var(--ink);cursor:pointer;touch-action:manipulation}
+ruby rt{font-size:.5em;font-weight:400}
+[hidden]{display:none!important}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* スタート画面 */
+#start>*{flex-shrink:0}
+#start{overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:max(16px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+.topbar{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.tbtn{min-height:48px;min-width:48px;padding:6px 16px;border:2px solid var(--line);background:var(--panel);border-radius:12px;
+  font-size:17px;font-weight:700;display:inline-flex;align-items:center;gap:8px}
+.tbtn svg{width:24px;height:24px}
+.title{margin:8px 0 2px;font-size:clamp(34px,6vw,56px);font-weight:700;letter-spacing:.04em;line-height:1.25}
+.title .n{color:var(--main)}
+.lead{margin:0 0 14px;font-size:clamp(14px,1.9vw,19px);color:var(--sub);line-height:1.8}
+.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:12px}
+.mode{min-height:96px;padding:12px 14px;border:3px solid var(--line);background:var(--panel);border-radius:16px;text-align:left;
+  display:flex;flex-direction:column;gap:6px;line-height:1.6}
+.mode b{font-size:24px}
+.mode span{font-size:15px;color:var(--sub)}
+.mode.sel{border-color:var(--main);box-shadow:0 0 0 3px rgba(18,144,106,.18)}
+.quick{background:var(--panel);border-radius:16px;padding:4px 16px;margin-bottom:12px;border:2px solid var(--line)}
+.quick .row:last-child{border-bottom:none}
+.summary{font-size:16px;color:var(--sub);margin:0 0 16px;line-height:2}
+.summary b{color:var(--ink)}
+.go{align-self:center;min-height:88px;min-width:min(420px,100%);padding:10px 40px;border:none;border-radius:20px;background:var(--main);
+  color:var(--main-ink);font-size:clamp(30px,4.6vw,42px);font-weight:700;letter-spacing:.08em;box-shadow:0 6px 0 #0C6E50}
+.go:active{transform:translateY(4px);box-shadow:0 2px 0 #0C6E50}
+.note{margin-top:14px;font-size:14px;color:var(--sub);text-align:center;line-height:1.9}
+
+/* モーダル */
+.modal{position:fixed;inset:0;background:rgba(20,30,40,.45);display:flex;align-items:center;justify-content:center;z-index:50;
+  padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.sheet{background:var(--panel);border-radius:18px;width:min(800px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:2px solid var(--line)}
+.sheet-h h2{margin:0;font-size:22px}
+.sheet-b{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 18px 18px}
+.close{min-width:96px;min-height:48px;border:none;border-radius:12px;background:var(--main);color:#fff;font-size:18px;font-weight:700}
+.grp{margin:16px 0 4px;font-size:15px;color:var(--sub);font-weight:700;letter-spacing:.1em;border-bottom:1px dashed var(--line);padding-bottom:4px}
+.row{display:flex;align-items:center;gap:10px 14px;padding:10px 0;flex-wrap:wrap;border-bottom:1px solid #EEF2F6}
+.row>label{flex:0 0 150px;font-size:17px;font-weight:700;line-height:1.9}
+.seg{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 300px}
+.seg button{min-height:48px;min-width:64px;padding:4px 14px;border:2px solid var(--line);background:#fff;border-radius:10px;font-size:17px;line-height:1.7}
+.seg button.on{background:var(--main);border-color:var(--main);color:#fff;font-weight:700}
+.seg button .no{display:inline-block;min-width:1.6em;height:1.6em;line-height:1.6em;border-radius:99px;background:#fff;color:var(--main);font-size:.85em;margin-right:6px;text-align:center}
+.seg button:not(.on) .no{display:none}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:52px;height:52px;border:2px solid var(--line);background:#fff;border-radius:10px;font-size:20px}
+.step input{width:84px;height:52px;border:2px solid var(--line);border-radius:10px;text-align:center;font-size:22px;font-family:var(--font);
+  font-variant-numeric:tabular-nums;-webkit-user-select:text;user-select:text;background:#fff;color:var(--ink)}
+.step .unit{font-size:17px}
+.hint{flex:1 1 100%;font-size:14px;color:var(--sub);line-height:1.9;margin:0}
+.help ol{padding-left:1.4em;font-size:19px;line-height:2.2;margin:8px 0}
+.help .t{font-size:15px;color:var(--sub);line-height:1.9;border-top:1px solid var(--line);padding-top:10px}
+.privacy{margin-top:22px;padding:12px 14px;border-radius:12px;background:var(--off);font-size:15px;line-height:2;color:var(--ink)}
+.privacy b{display:block;font-size:16px}
+.seg button .sw{display:inline-block;width:22px;height:22px;border-radius:50%;vertical-align:-5px;margin-right:6px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2)}
+.chk{display:flex;align-items:center;gap:10px;font-size:16px;min-height:48px}
+.chk input{width:26px;height:26px}
+
+/* 活動画面 */
+#stage{background:#000}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#vid{position:absolute;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none}
+.hud{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none;
+  padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left))}
+.pill{pointer-events:auto;background:rgba(255,255,255,.92);border-radius:14px;padding:6px 18px;font-size:clamp(22px,3.4vw,36px);font-weight:700;
+  font-variant-numeric:tabular-nums;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.stop{pointer-events:auto;min-height:52px;min-width:88px;border:none;border-radius:14px;background:rgba(255,255,255,.92);font-size:20px;font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.hud .grow{flex:1}
+#msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,92vw);text-align:center;pointer-events:none}
+#msg .box{display:inline-block;background:rgba(255,255,255,.95);border:6px solid var(--c,var(--main));border-radius:24px;padding:14px 34px;box-shadow:0 4px 18px rgba(0,0,0,.2)}
+#msgMain{font-size:clamp(28px,4.6vw,50px);font-weight:700;line-height:1.5;color:var(--ink)}
+#msgSub{font-size:clamp(18px,2.6vw,26px);color:var(--sub);line-height:1.9;margin-top:4px}
+#msgBar{margin:12px auto 2px;width:min(420px,70vw);height:18px;border-radius:9px;background:var(--off);overflow:hidden}
+#msgBar i{display:block;height:100%;width:0;background:var(--c,var(--main))}
+#msg.big .box{background:var(--c,var(--main));border:6px solid #fff;border-radius:999px;padding:6px 56px;box-shadow:0 6px 0 rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.2)}
+#msg.big #msgMain{color:#fff;font-size:clamp(56px,8.5vw,100px);line-height:1.2;letter-spacing:.04em}
+#msg.big.word #msgMain{font-size:clamp(40px,6vw,72px)}
+#msg.pop .box{animation:pop .38s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){#msg.pop .box{animation:none}}
+
+/* 結果 */
+#result{align-items:center;justify-content:center;background:var(--bg);overflow-y:auto;
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.res{background:var(--panel);border-radius:22px;padding:24px 28px;width:min(640px,100%);text-align:center;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.res h2{margin:0;font-size:clamp(38px,6vw,56px)}
+.res .praise{font-size:22px;color:var(--sub);margin:4px 0 14px}
+.res .num{font-size:clamp(70px,12vw,120px);font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--main)}
+.res .lbl{font-size:22px;font-weight:700;line-height:2}
+.res .lr{display:flex;justify-content:center;gap:14px;margin:14px 0 20px;flex-wrap:wrap}
+.res .lr div{min-width:150px;padding:8px 14px;border-radius:14px;font-size:22px;font-weight:700;line-height:1.9;border:3px solid}
+.res .lr.wide div{min-width:200px;font-size:24px}
+.res .lr.wide em{font-size:64px;line-height:1.3}
+.res .lr em{font-style:normal;font-size:34px;font-variant-numeric:tabular-nums}
+.btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{min-height:64px;min-width:200px;padding:6px 22px;border-radius:16px;font-size:24px;font-weight:700;border:3px solid var(--line);background:#fff;line-height:1.7}
+.btn.main{background:var(--main);border-color:var(--main);color:#fff}
+
+/* 準備中・エラー */
+#wait{position:fixed;inset:0;z-index:60;background:rgba(243,246,249,.96);display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:24px max(20px,env(safe-area-inset-right)) 24px max(20px,env(safe-area-inset-left))}
+#wait .in{max-width:640px}
+#waitMain{font-size:clamp(26px,4.2vw,40px);font-weight:700;line-height:1.7}
+#waitSub{font-size:16px;color:var(--sub);line-height:2;margin:10px 0 18px}
+.spin{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;border:8px solid var(--off);border-top-color:var(--main);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+</style>
+</head>
+<body>
+
+<!-- ===== スタート画面 ===== -->
+<section id="start" class="screen">
+  <div class="topbar">
+    <button class="tbtn" id="btnFull" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      ぜんがめん</button>
+    <button class="tbtn" id="btnHelp">つかいかた</button>
+    <button class="tbtn" id="btnSet" aria-label="せってい">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      せってい</button>
+  </div>
+  <h1 class="title">ポーズで ゲーム<span class="n">2</span></h1>
+  <p class="lead"><ruby>手<rt>て</rt></ruby>と<ruby>足<rt>あし</rt></ruby>で <ruby>的<rt>まと</rt></ruby>に タッチしよう。<ruby>的<rt>まと</rt></ruby>は、<ruby>体<rt>からだ</rt></ruby>の <ruby>大<rt>おお</rt></ruby>きさに あわせて、とどく ところに <ruby>出<rt>で</rt></ruby>るよ。</p>
+  <div class="modes" id="modes"></div>
+  <div class="quick" id="quick"></div>
+  <p class="summary" id="summary"></p>
+  <button class="go" id="btnGo">はじめる</button>
+  <p class="note">プロジェクターに うつして、<ruby>体<rt>からだ</rt></ruby>ぜんたいが <ruby>足<rt>あし</rt></ruby>もとまで うつるように はなれてね（2.5〜3メートルくらい）。</p>
+</section>
+
+<!-- ===== 活動画面 ===== -->
+<section id="stage" class="screen" hidden>
+  <video id="vid" playsinline muted autoplay></video>
+  <canvas id="cv"></canvas>
+  <div class="hud">
+    <button class="stop" id="btnStop">やめる</button>
+    <div class="pill" id="hudScore" hidden>できた 0</div>
+    <div class="grow"></div>
+    <div class="pill" id="hudTime" hidden>のこり 60秒</div>
+    <div class="grow" id="hudGrow2" hidden></div>
+    <div class="pill" id="hudScore2" hidden>できた 0</div>
+  </div>
+  <div id="msg" hidden><div class="box"><div id="msgMain"></div><div id="msgSub"></div><div id="msgBar" hidden><i></i></div></div></div>
+</section>
+
+<!-- ===== 結果画面 ===== -->
+<section id="result" class="screen" hidden>
+  <div class="res">
+    <h2>おわり！</h2>
+    <p class="praise">よく がんばったね</p>
+    <div class="lbl" id="resLbl">できた<ruby>数<rt>かず</rt></ruby></div>
+    <div class="num" id="resNum">0</div>
+    <div class="lr" id="resBoxes"></div>
+    <div class="btns">
+      <button class="btn main" id="btnAgain">もういちど</button>
+      <button class="btn" id="btnHome">さいしょに もどる</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 設定 ===== -->
+<div class="modal" id="setModal" hidden>
+  <div class="sheet">
+    <div class="sheet-h"><h2>せってい</h2><button class="close" id="setClose">とじる</button></div>
+    <div class="sheet-b scroll" id="setBody"></div>
+  </div>
+</div>
+
+<!-- ===== つかいかた ===== -->
+<div class="modal" id="helpModal" hidden>
+  <div class="sheet help">
+    <div class="sheet-h"><h2>つかいかた</h2><button class="close" id="helpClose">とじる</button></div>
+    <div class="sheet-b scroll">
+      <ol>
+        <li>iPadを プロジェクターに つないで、<ruby>体<rt>からだ</rt></ruby>ぜんたいが <ruby>足<rt>あし</rt></ruby>もとまで うつるところに おいてね。</li>
+        <li>「はじめる」を おしたら、<ruby>両手<rt>りょうて</rt></ruby>を あげてね。あげた<ruby>人<rt>ひと</rt></ruby>を おぼえて、<ruby>体<rt>からだ</rt></ruby>の <ruby>大<rt>おお</rt></ruby>きさを はかるよ。</li>
+        <li><ruby>光<rt>ひか</rt></ruby>っている <ruby>手<rt>て</rt></ruby>や <ruby>足<rt>あし</rt></ruby>で、おなじ <ruby>色<rt>いろ</rt></ruby>・おなじ マークの <ruby>的<rt>まと</rt></ruby>に タッチしてね。ぜんぶ いっしょに さわると「できた」に なるよ。</li>
+        <li><ruby>画面<rt>がめん</rt></ruby>を タップすると、つぎの おだいに かわるよ（できない ときに つかってね）。</li>
+      </ol>
+      <p class="t"><b>まとの <ruby>場所<rt>ばしょ</rt></ruby>について</b><br>
+      <ruby>最初<rt>さいしょ</rt></ruby>に、うでの <ruby>長<rt>なが</rt></ruby>さ・<ruby>足<rt>あし</rt></ruby>の <ruby>長<rt>なが</rt></ruby>さ・<ruby>肩<rt>かた</rt></ruby>はばを はかります。<ruby>手<rt>て</rt></ruby>の まとは <ruby>肩<rt>かた</rt></ruby>から うでが とどく <ruby>円<rt>えん</rt></ruby>の <ruby>中<rt>なか</rt></ruby>に、<ruby>足<rt>あし</rt></ruby>の まとは こしから <ruby>足<rt>あし</rt></ruby>が とどく ところに <ruby>出<rt>で</rt></ruby>ます。
+      <ruby>両足<rt>りょうあし</rt></ruby>を いっしょに あげる おだいは <ruby>出<rt>で</rt></ruby>ません（かたほうは ゆかに つきます）。<ruby>足<rt>あし</rt></ruby>を あげている ときは、<ruby>手<rt>て</rt></ruby>の まとは ひざや ゆかに <ruby>出<rt>で</rt></ruby>ません。<br>
+      カメラは まえと うしろの うごきが わからないので、まとは <ruby>上下<rt>じょうげ</rt></ruby>・<ruby>左右<rt>さゆう</rt></ruby>に <ruby>出<rt>で</rt></ruby>ます。</p>
+      <label class="chk"><input type="checkbox" id="helpNever"><span><ruby>次<rt>つぎ</rt></ruby>から<ruby>表示<rt>ひょうじ</rt></ruby>しない</span></label>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 準備中・エラー ===== -->
+<div id="wait" hidden>
+  <div class="in">
+    <div class="spin" id="waitSpin"></div>
+    <div id="waitMain">じゅんび しているよ</div>
+    <div id="waitSub"></div>
+    <button class="btn" id="waitBack" hidden>もどる</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 定数 ================= */
+const MP_VER = '1.1.1';
+const MP_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + MP_VER;
+const MODEL_URL = {
+  lite: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+  full: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task'
+};
+const HAND_LM = { R:{w:16,i:20,p:18}, L:{w:15,i:19,p:17} };
+const FOOT_LM = { R:[28,30,32], L:[27,29,31] };
+const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
+const PTS = ['RH','LH','RF','LF','HD'];
+const STORE_KEY = 'poseGame2_v1';
+const HELP_KEY = 'poseGame2_help_v1';
+let DEMO = false;
+try{ DEMO = new URLSearchParams(location.search).has('demo'); }catch(e){}
+
+/* ================= 設定 ================= */
+const DEF = {
+  mode:'touch', players:1, team:'vs', time:60,
+  hand:'both', foot:'none', lr:true, how:'one', keep:0, skip:0, size:'m',
+  reach:'normal', low:false,
+  poseHand:['ue','kata','yoko','yuka'], poseFoot:['sukoshi','takaku'], poseOrder:'seq', poseSquat:false,
+  balFoot:'takaku', balHand:'yoko', balKeep:3,
+  colOne:'#1FA85A', colR:'#E5487A', colL:'#1AA6C9', colP1:'#F07A18', colP2:'#7C4DDB',
+  camera:'user', mirror:true, video:'full', model:'full', sound:true
+};
+let S = Object.assign({}, DEF);
+try{
+  const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if(s && typeof s === 'object') S = Object.assign({}, DEF, s);
+}catch(e){}
+['poseHand','poseFoot'].forEach(k=>{ if(!Array.isArray(S[k])) S[k] = DEF[k].slice(); });
+try{ const q = new URLSearchParams(location.search).get('mode'); if(q && ['touch','pose','balance'].includes(q)) S.mode = q; }catch(e){}
+if(!['touch','pose','balance'].includes(S.mode)) S.mode = 'touch';
+function saveS(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
+
+const R_ = (k,r)=>'<ruby>'+k+'<rt>'+r+'</rt></ruby>';
+
+const MODES = [
+  {id:'touch', name:'タッチ', desc:'あちこちに '+R_('出','で')+'る '+R_('的','まと')+'に '+R_('手','て')+'や '+R_('足','あし')+'で タッチ'},
+  {id:'pose', name:'ポーズ', desc:'うえ・かた・よこ・ゆか… きまった '+R_('場所','ばしょ')+'を じゅんばんに'},
+  {id:'balance', name:'バランス', desc:R_('足','あし')+'を あげて、'+R_('的','まと')+'に ふれたまま キープ'}
+];
+const MODE_NAME = {touch:'タッチ', pose:'ポーズ', balance:'バランス'};
+
+// ポーズの場所
+const HAND_POS = [['ue','うえ'],['naname','ななめうえ'],['yoko','よこ'],['kata','かた'],['atama','あたま'],['koshi','こし'],['hiza','ひざ'],['yuka','ゆか']];
+const FOOT_POS = [['sukoshi','すこし あげる'],['takaku','たかく あげる'],['yokoage','よこに あげる'],['hiraku','よこに ひらく']];
+const POS_JP = {}; HAND_POS.concat(FOOT_POS).forEach(([k,v])=>POS_JP[k]=v);
+const LIFTED = {sukoshi:true, takaku:true, yokoage:true};
+const LOW_HAND = {hiza:true, yuka:true};
+const PART_JP = {RH:'みぎて', LH:'ひだりて', H:'て', RF:'みぎあし', LF:'ひだりあし', F:'あし', HD:'あたま'};
+
+const COLORS = [['#F07A18','オレンジ'],['#E03A3A','あか'],['#E5487A','ピンク'],['#D99A00','きいろ'],['#1FA85A','みどり'],['#1AA6C9','みずいろ'],['#2C6BDF','あお'],['#7C4DDB','むらさき']];
+
+const handOn = ()=> S.hand!=='none';
+const footOn = ()=> S.foot!=='none' || S.mode==='balance';
+const lrShown = ()=> S.hand==='both' || S.foot==='both' || (S.mode==='balance' && S.foot==='none');
+const handsLR = ()=> S.hand==='R' || S.hand==='L' || (S.hand==='both' && S.lr);
+const feetLR = ()=> S.foot==='R' || S.foot==='L' || ((S.foot==='both' || (S.mode==='balance' && S.foot==='none')) && S.lr);
+function partCount(){
+  const h = {none:0,R:1,L:1,one:1,both:2}[S.hand]||0, f = {none:0,R:1,L:1,one:1,both:2}[S.foot]||0;
+  return h+f;
+}
+const howShown = ()=> S.mode!=='balance' && partCount()>1;
+function howOpts(){
+  const o = [['one','ひとつずつ'],['same','いっしょ・'+R_('左右','さゆう')+'おなじ'],['diff','いっしょ・'+R_('左右','さゆう')+'ちがう']];
+  if(S.hand==='both' && S.lr) o.push(['cross','クロス（'+R_('反対','はんたい')+'がわ）']);
+  return o;
+}
+function fixS(){
+  if(S.how==='cross' && !(S.hand==='both' && S.lr)) S.how='diff';
+  if(S.hand==='none' && S.foot==='none' && S.mode!=='balance') S.hand='both';
+}
+fixS();
+
+const SCHEMA = [
+  {grp:'あそびかた'},
+  {key:'players', label:'にんずう', type:'seg', quick:true, opts:[[1,'ひとり'],[2,'ふたり']]},
+  {key:'team', label:'ふたりのとき', type:'seg', opts:[['vs','きょうそう'],['coop','きょうりょく']], show:()=>S.players===2,
+    hint:'ふたりのときは、'+R_('画面','がめん')+'の '+R_('左','ひだり')+'と '+R_('右','みぎ')+'に わかれて、それぞれの '+R_('体','からだ')+'に あわせた '+R_('的','まと')+'が '+R_('出','で')+'るよ。'},
+  {key:'time', label:R_('時間','じかん'), type:'step', min:10, max:600, step:10, unit:'秒'},
+  {key:'hand', label:R_('使','つか')+'う '+R_('手','て'), type:'seg', quick:true,
+    opts:[['none','なし'],['R',R_('右手','みぎて')],['L',R_('左手','ひだりて')],['one','かたて（どちらでも）'],['both',R_('両手','りょうて')]]},
+  {key:'foot', label:R_('使','つか')+'う '+R_('足','あし'), type:'seg', quick:true,
+    opts:[['none','なし'],['R',R_('右足','みぎあし')],['L',R_('左足','ひだりあし')],['one','かたあし（どちらでも）'],['both',R_('両足','りょうあし')]],
+    hint:()=> S.mode==='balance' && S.foot!=='R' && S.foot!=='L' ? 'バランスでは、'+R_('右足','みぎあし')+'と '+R_('左足','ひだりあし')+'を こうたいで あげるよ。' : ''},
+  {key:'lr', label:R_('左右','さゆう')+'の '+R_('区別','くべつ'), type:'seg', quick:true, opts:[[true,'あり'],[false,'なし']], show:lrShown,
+    hint:'あり：'+R_('右','みぎ')+'と '+R_('左','ひだり')+'が べつの '+R_('色','いろ')+'に なるよ。なし：どちらの '+R_('手','て')+'（'+R_('足','あし')+'）で さわっても いいよ。'},
+  {key:'how', label:R_('出','だ')+'しかた', type:'seg', quick:true, opts:howOpts, show:howShown,
+    hint:'ひとつずつ：'+R_('的','まと')+'が ひとつずつ '+R_('出','で')+'るよ。いっしょ：えらんだ '+R_('手','て')+'・'+R_('足','あし')+'の '+R_('的','まと')+'が いっしょに '+R_('出','で')+'て、ぜんぶ さわると できたに なるよ。'+R_('左右','さゆう')+'おなじ：かがみのように おなじ '+R_('高','たか')+'さ。クロス：'+R_('右手','みぎて')+'で '+R_('左','ひだり')+'がわを さわるよ。'+R_('両足','りょうあし')+'を いっしょに あげる おだいは '+R_('出','で')+'ないよ。'},
+  {key:'keep', label:'キープ', type:'seg', opts:[[0,'すぐ'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]], show:()=>S.mode!=='balance',
+    hint:R_('的','まと')+'に さわったまま、この '+R_('時間','じかん')+' がまんすると できたに なるよ。'},
+  {key:'skip', label:'つぎへ すすむ', type:'seg', opts:[[0,'できるまで まつ'],[20,'20'+R_('秒','びょう')],[10,'10'+R_('秒','びょう')]],
+    hint:'できないまま この '+R_('時間','じかん')+'が たつと、つぎの おだいに かわるよ。'+R_('画面','がめん')+'を タップしても かわるよ。'},
+  {key:'size', label:R_('的','まと')+'の '+R_('大','おお')+'きさ', type:'seg', opts:[['s',R_('小','しょう')],['m',R_('中','ちゅう')],['l',R_('大','だい')]]},
+
+  {grp:'タッチの せってい', mode:['touch']},
+  {key:'reach', label:'とおさ', type:'seg', opts:[['near','ちかい'],['normal','ふつう'],['far','とおい']],
+    hint:'うでや '+R_('足','あし')+'を どれだけ のばすかだよ。とおい でも、とどく ところまでしか '+R_('出','で')+'ないよ。'},
+  {key:'low', label:'ひくい '+R_('的','まと'), type:'seg', opts:[[false,'なし'],[true,'あり（しゃがむ）']], show:handOn,
+    hint:'あり：しゃがんで ゆかの ちかくを さわる '+R_('的','まと')+'も '+R_('出','で')+'るよ。'},
+
+  {grp:'ポーズの せってい', mode:['pose']},
+  {key:'poseHand', label:R_('手','て')+'の '+R_('場所','ばしょ'), type:'multi', opts:HAND_POS, show:handOn,
+    hint:'おした じゅんばんに ばんごうが つくよ。もういちど おすと はずれるよ。'},
+  {key:'poseFoot', label:R_('足','あし')+'の '+R_('場所','ばしょ'), type:'multi', opts:FOOT_POS, show:()=>S.foot!=='none'},
+  {key:'poseOrder', label:R_('出','で')+'る じゅんばん', type:'seg', opts:[['seq','ばんごうの じゅんばん'],['rand','ばらばら']]},
+  {key:'poseSquat', label:'しゃがむ', type:'seg', opts:[[false,'なし'],[true,'ときどき まぜる']],
+    hint:'4かいに 1かい、あたまを ひくい '+R_('的','まと')+'に いれる「しゃがむ」が '+R_('出','で')+'るよ。'},
+  {type:'info', label:'れい', show:()=>S.mode==='pose', html:()=>poseExample()},
+
+  {grp:'バランスの せってい', mode:['balance']},
+  {key:'balFoot', label:R_('足','あし')+'の '+R_('高','たか')+'さ', type:'seg', opts:[['sukoshi','すこし'],['takaku','たかく']]},
+  {key:'balHand', label:R_('手','て')+'の ポーズ', type:'seg', opts:[['none','なし'],['yoko','よこ（ひこうき）'],['ue','うえ'],['koshi','こし']], show:handOn},
+  {key:'balKeep', label:'キープ', type:'seg', opts:[[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')],[10,'10'+R_('秒','びょう')]]},
+
+  {grp:R_('色','いろ')},
+  {key:'colOne', label:R_('色','いろ'), type:'color', show:()=>S.players===1 && !(handsLR()||feetLR())},
+  {key:'colR', label:R_('右','みぎ')+'の '+R_('色','いろ'), type:'color', show:()=>S.players===1 && (handsLR()||feetLR())},
+  {key:'colL', label:R_('左','ひだり')+'の '+R_('色','いろ'), type:'color', show:()=>S.players===1 && (handsLR()||feetLR())},
+  {key:'colP1', label:R_('左','ひだり')+'がわの '+R_('人','ひと'), type:'color', show:()=>S.players===2},
+  {key:'colP2', label:R_('右','みぎ')+'がわの '+R_('人','ひと'), type:'color', show:()=>S.players===2},
+
+  {grp:'カメラ'},
+  {key:'camera', label:'カメラ', type:'seg', opts:[['user','インカメラ'],['environment',R_('背面','はいめん')+'カメラ']]},
+  {key:'mirror', label:R_('左右','さゆう')+R_('反転','はんてん'), type:'seg', opts:[[true,'あり（かがみ）'],[false,'なし']],
+    hint:'「あり」にすると、かがみのように '+R_('右手','みぎて')+'が '+R_('画面','がめん')+'の '+R_('右','みぎ')+'に うつるよ。'},
+  {key:'video', label:R_('映像','えいぞう'), type:'seg', opts:[['full','こい'],['soft','うすい'],['none','なし']],
+    hint:'「なし」のときは '+R_('体','からだ')+'の '+R_('線','せん')+'だけ '+R_('出','で')+'るよ。プロジェクターで '+R_('見','み')+'にくいときに ためしてね。'},
+  {key:'model', label:R_('読','よ')+'み'+R_('取','と')+'り', type:'seg', opts:[['full','せいかく'],['lite','はやい']],
+    hint:'うごきが おそく '+R_('感','かん')+'じるときは「はやい」に してね。'},
+  {grp:'その'+R_('他','ほか')},
+  {key:'sound', label:R_('効果音','こうかおん'), type:'seg', opts:[[true,'あり'],[false,'なし']]}
+];
+
+function poseExample(){
+  const hs = S.poseHand.map(k=>POS_JP[k]), fs = S.poseFoot.map(k=>POS_JP[k]);
+  const out = [];
+  if(handOn()) out.push(R_('手','て')+'：'+(hs.length ? hs.join(' → ') : '（えらんでね）'));
+  if(S.foot!=='none') out.push(R_('足','あし')+'：'+(fs.length ? fs.join(' → ') : '（えらんでね）'));
+  if(S.poseOrder==='rand') out.push('（ばらばらに '+R_('出','で')+'るよ）');
+  return out.join('<br>');
+}
+
+/* ================= DOM ================= */
+const $ = id => document.getElementById(id);
+const scrStart=$('start'), scrStage=$('stage'), scrResult=$('result');
+const cv=$('cv'), ctx=cv.getContext('2d'), video=$('vid');
+const msgEl=$('msg'), msgMain=$('msgMain'), msgSub=$('msgSub'), msgBar=$('msgBar'), msgBarI=msgBar.querySelector('i');
+const hudScore=$('hudScore'), hudTime=$('hudTime'), hudScore2=$('hudScore2'), hudGrow2=$('hudGrow2');
+
+/* ================= iPadの標準動作をおさえる ================= */
+document.addEventListener('gesturestart', e=>e.preventDefault(), {passive:false});
+document.addEventListener('gesturechange', e=>e.preventDefault(), {passive:false});
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e=>{
+  const now = Date.now();
+  const interactive = e.target.closest && e.target.closest('button,input,label,a,select');
+  if(!interactive && now - lastTouchEnd < 300) e.preventDefault();
+  lastTouchEnd = now;
+}, {passive:false});
+document.addEventListener('touchmove', e=>{
+  if(e.touches.length > 1){ e.preventDefault(); return; }
+  if(!(e.target.closest && e.target.closest('.scroll,#start,#result'))) e.preventDefault();
+}, {passive:false});
+document.addEventListener('contextmenu', e=>e.preventDefault());
+
+function show(scr){ [scrStart,scrStage,scrResult].forEach(s=>{ s.hidden = (s!==scr); }); }
+
+/* ================= スタート画面と設定 ================= */
+function renderModes(){
+  const box = $('modes'); box.innerHTML='';
+  MODES.forEach(m=>{
+    const b = document.createElement('button');
+    b.className = 'mode' + (S.mode===m.id ? ' sel':'');
+    b.innerHTML = '<b>'+m.name+'</b><span>'+m.desc+'</span>';
+    b.addEventListener('click', ()=>{ S.mode=m.id; fixS(); saveS(); renderAll(); });
+    box.appendChild(b);
+  });
+}
+function renderAll(){ renderModes(); renderQuick(); renderSummary(); if(!$('setModal').hidden) renderSettings(); }
+
+function buildRow(it){
+  const row = document.createElement('div'); row.className='row';
+  const lab = document.createElement('label'); lab.innerHTML = it.label; row.appendChild(lab);
+  if(it.type==='seg' || it.type==='color'){
+    const seg = document.createElement('div'); seg.className='seg';
+    const raw = typeof it.opts==='function' ? it.opts() : it.opts;
+    const opts = it.type==='color' ? COLORS.map(([c,n])=>[c,'<i class="sw" style="background:'+c+'"></i>'+n]) : raw;
+    opts.forEach(([v,t])=>{
+      const b=document.createElement('button'); b.innerHTML=t;
+      if(S[it.key]===v) b.className='on';
+      b.addEventListener('click', ()=>{ S[it.key]=v; fixS(); saveS(); renderAll(); });
+      seg.appendChild(b);
+    });
+    row.appendChild(seg);
+  }else if(it.type==='multi'){
+    const seg = document.createElement('div'); seg.className='seg';
+    it.opts.forEach(([v,t])=>{
+      const b=document.createElement('button');
+      const idx = S[it.key].indexOf(v);
+      b.innerHTML = '<span class="no">'+(idx+1)+'</span>'+t;
+      if(idx>=0) b.className='on';
+      b.addEventListener('click', ()=>{
+        const a = S[it.key].slice(), i = a.indexOf(v);
+        if(i>=0) a.splice(i,1); else a.push(v);
+        S[it.key]=a; saveS(); renderAll();
+      });
+      seg.appendChild(b);
+    });
+    row.appendChild(seg);
+  }else if(it.type==='info'){
+    const d=document.createElement('div'); d.className='seg'; d.style.fontSize='19px'; d.style.fontWeight='700'; d.style.lineHeight='1.9'; d.innerHTML=it.html(); row.appendChild(d);
+  }else{
+    const st=document.createElement('div'); st.className='step';
+    const dn=document.createElement('button'); dn.textContent='▽'; dn.setAttribute('aria-label','へらす');
+    const inp=document.createElement('input'); inp.type='number'; inp.inputMode='numeric'; inp.value=S[it.key];
+    const up=document.createElement('button'); up.textContent='△'; up.setAttribute('aria-label','ふやす');
+    const un=document.createElement('span'); un.className='unit'; un.textContent=it.unit||'';
+    const setV = v=>{ v=Math.round(Number(v)/it.step)*it.step; if(!isFinite(v)) v=S[it.key];
+      v=Math.max(it.min,Math.min(it.max,v)); S[it.key]=v; inp.value=v; saveS(); renderSummary(); };
+    dn.addEventListener('click', ()=>setV(S[it.key]-it.step));
+    up.addEventListener('click', ()=>setV(S[it.key]+it.step));
+    inp.addEventListener('change', ()=>setV(inp.value));
+    inp.addEventListener('blur', ()=>setV(inp.value));
+    st.append(dn,inp,up,un); row.appendChild(st);
+  }
+  const hint = typeof it.hint==='function' ? it.hint() : it.hint;
+  if(hint){ const h=document.createElement('p'); h.className='hint'; h.innerHTML=hint; row.appendChild(h); }
+  return row;
+}
+function renderQuick(){
+  const box = $('quick'); box.innerHTML='';
+  SCHEMA.forEach(it=>{ if(!it.quick) return; if(it.show && !it.show()) return; box.appendChild(buildRow(it)); });
+}
+function renderSettings(){
+  const body = $('setBody'); body.innerHTML='';
+  let grpOn = true;
+  SCHEMA.forEach(it=>{
+    if(it.grp){
+      grpOn = !it.mode || it.mode.includes(S.mode);
+      if(grpOn){ const g=document.createElement('div'); g.className='grp'; g.innerHTML=it.grp; body.appendChild(g); }
+      return;
+    }
+    if(!grpOn) return;
+    if(it.show && !it.show()) return;
+    body.appendChild(buildRow(it));
+  });
+  const pv=document.createElement('div'); pv.className='privacy';
+  pv.innerHTML='<b>カメラの'+R_('映像','えいぞう')+'について</b>'+
+    'カメラの'+R_('映像','えいぞう')+'は、このiPadの'+R_('中','なか')+'だけで'+R_('読','よ')+'み'+R_('取','と')+'りに'+R_('使','つか')+'います。'+
+    R_('映像','えいぞう')+'や'+R_('写真','しゃしん')+'を、ほかの'+R_('場所','ばしょ')+'へ'+R_('送信','そうしん')+'したり、'+R_('保存','ほぞん')+'したりすることはありません。<br>'+
+    'このiPadに'+R_('保存','ほぞん')+'するのは、この「せってい」の'+R_('内容','ないよう')+'だけです。<br>'+
+    R_('最初','さいしょ')+'に、'+R_('読','よ')+'み'+R_('取','と')+'りのしくみ（プログラムとデータ）をインターネットから'+R_('読','よ')+'みこみます。';
+  body.appendChild(pv);
+}
+function partsText(){
+  const h = {none:'',R:R_('右手','みぎて'),L:R_('左手','ひだりて'),one:'かたて',both:R_('両手','りょうて')}[S.hand];
+  let f = {none:'',R:R_('右足','みぎあし'),L:R_('左足','ひだりあし'),one:'かたあし',both:R_('両足','りょうあし')}[S.foot];
+  if(S.mode==='balance' && !f) f = R_('足','あし');
+  return [h,f].filter(Boolean).join('＋');
+}
+function renderSummary(){
+  const p = ['<b>'+MODE_NAME[S.mode]+'</b>', partsText()];
+  if(lrShown()) p.push(R_('左右','さゆう')+'の'+R_('区別','くべつ')+(S.lr?'あり':'なし'));
+  if(howShown()){ const o = howOpts().find(x=>x[0]===S.how); if(o) p.push(o[1]); }
+  if(S.mode==='pose'){ const ex = poseExample().replace(/<br>/g,' ／ '); if(ex) p.push(ex); }
+  if(S.mode==='balance') p.push('キープ '+S.balKeep+R_('秒','びょう'));
+  else if(S.keep) p.push('キープ '+S.keep+R_('秒','びょう'));
+  p.push(S.players===2 ? 'ふたり' : 'ひとり');
+  p.push(S.time+R_('秒','びょう'));
+  $('summary').innerHTML = p.filter(Boolean).join('　・　');
+}
+$('btnSet').addEventListener('click', ()=>{ renderSettings(); $('setModal').hidden=false; });
+$('setClose').addEventListener('click', ()=>{ $('setModal').hidden=true; renderAll(); });
+$('btnHelp').addEventListener('click', ()=>{ $('helpModal').hidden=false; });
+$('helpClose').addEventListener('click', ()=>{
+  if($('helpNever').checked){ try{ localStorage.setItem(HELP_KEY,'1'); }catch(e){} }
+  $('helpModal').hidden=true;
+});
+
+/* 全画面 */
+(function(){
+  const el=document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  if(!req) return;
+  const b=$('btnFull'); b.hidden=false;
+  b.addEventListener('click', ()=>{
+    try{
+      const fs = document.fullscreenElement || document.webkitFullscreenElement;
+      if(fs){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+      else { const p=req.call(el); if(p && p.catch) p.catch(()=>{}); }
+    }catch(e){}
+  });
+})();
+
+/* ================= 効果音 ================= */
+let actx = null;
+function unlockAudio(){
+  try{
+    if(!actx){ const AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); }
+    if(!actx) return;
+    if(actx.state==='suspended') actx.resume();
+    const b = actx.createBuffer(1,1,22050), s = actx.createBufferSource();
+    s.buffer=b; s.connect(actx.destination); s.start(0);
+  }catch(e){}
+}
+function tone(f, dur, type, vol, when){
+  if(!S.sound || !actx) return;
+  try{
+    const t = actx.currentTime + (when||0);
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type||'sine'; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol||0.2, t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur+0.03);
+  }catch(e){}
+}
+const SFX = {
+  hit(){ tone(880,.12,'triangle',.22); tone(1320,.2,'triangle',.18,.06); },
+  touch(){ tone(740,.08,'triangle',.14); },
+  hold(n){ tone(600+n*80,.12,'sine',.16); },
+  wrong(){ tone(392,.16,'sine',.09); },
+  skip(){ tone(500,.1,'sine',.1); tone(420,.14,'sine',.1,.08); },
+  tick(){ tone(660,.14,'sine',.18); },
+  go(){ tone(988,.3,'triangle',.22); },
+  reg(){ tone(523,.12,'triangle',.18); tone(659,.12,'triangle',.18,.1); tone(784,.22,'triangle',.18,.2); },
+  lost(){ tone(440,.2,'sine',.1); tone(349,.25,'sine',.1,.18); },
+  end(){ [523,659,784,1047].forEach((f,i)=>tone(f,.24,'triangle',.2,i*.13)); }
+};
+
+/* ================= 画面スリープ防止 ================= */
+let wakeLock = null;
+async function keepAwake(on){
+  try{
+    if(on && 'wakeLock' in navigator && !wakeLock){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{ wakeLock=null; }); }
+    if(!on && wakeLock){ await wakeLock.release(); wakeLock=null; }
+  }catch(e){ wakeLock=null; }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && !scrStage.hidden) keepAwake(true); });
+
+/* ================= 準備中・エラー表示 ================= */
+function waitShow(main, sub, isErr){
+  $('wait').hidden=false; $('waitMain').innerHTML=main; $('waitSub').innerHTML=sub||'';
+  $('waitSpin').hidden=!!isErr; $('waitBack').hidden=!isErr;
+}
+function waitHide(){ $('wait').hidden=true; }
+$('waitBack').addEventListener('click', ()=>{ waitHide(); goHome(); });
+
+/* ================= カメラ ================= */
+let stream = null, streamFacing = null;
+function stopCamera(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); }
+  stream=null; streamFacing=null; video.srcObject=null;
+}
+async function startCamera(){
+  if(stream && streamFacing===S.camera && stream.getVideoTracks().some(t=>t.readyState==='live')) return;
+  stopCamera();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nocam');
+  stream = await navigator.mediaDevices.getUserMedia({
+    audio:false,
+    video:{ facingMode:{ideal:S.camera}, width:{ideal:1280}, height:{ideal:720} }
+  });
+  streamFacing = S.camera;
+  video.srcObject = stream;
+  await new Promise(res=>{ if(video.readyState>=1) res(); else video.onloadedmetadata=()=>res(); });
+  try{ await video.play(); }catch(e){}
+}
+
+/* ================= 読み取り（MediaPipe Pose） ================= */
+let TV = null, fileset = null, landmarker = null, landmarkerModel = null;
+async function loadModel(){
+  if(landmarker && landmarkerModel===S.model) return;
+  if(!TV){ TV = await import(MP_CDN + '/vision_bundle.mjs'); }
+  if(!fileset){ fileset = await TV.FilesetResolver.forVisionTasks(MP_CDN + '/wasm'); }
+  if(landmarker){ try{ landmarker.close(); }catch(e){} landmarker=null; }
+  const opts = d=>({
+    baseOptions:{ modelAssetPath:MODEL_URL[S.model], delegate:d },
+    runningMode:'VIDEO', numPoses:3,
+    minPoseDetectionConfidence:0.5, minPosePresenceConfidence:0.5, minTrackingConfidence:0.5
+  });
+  try{ landmarker = await TV.PoseLandmarker.createFromOptions(fileset, opts('GPU')); }
+  catch(e){ landmarker = await TV.PoseLandmarker.createFromOptions(fileset, opts('CPU')); }
+  landmarkerModel = S.model;
+}
+
+/* ================= 画面サイズと座標の変換 ================= */
+let W=0, H=0, DPR=1, MIN=1, HUDH=70;
+const L = {ox:0, oy:0, dw:1, dh:1};
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = cv.clientWidth || window.innerWidth; H = cv.clientHeight || window.innerHeight;
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  MIN = Math.min(W,H);
+  HUDH = Math.max(64, Math.min(96, MIN*0.11));
+  layoutVideo();
+}
+function layoutVideo(){
+  const vw = video.videoWidth||16, vh = video.videoHeight||9;
+  const s = Math.max(W/vw, H/vh);
+  L.dw = vw*s; L.dh = vh*s; L.ox = (W-L.dw)/2; L.oy = (H-L.dh)/2;
+}
+window.addEventListener('resize', ()=>{ if(!scrStage.hidden) resize(); });
+window.addEventListener('orientationchange', ()=>setTimeout(()=>{ if(!scrStage.hidden) resize(); }, 300));
+function toScr(p){ return { x: L.ox + (S.mirror ? (1-p.x) : p.x) * L.dw, y: L.oy + p.y * L.dh }; }
+function fromScr(p){ let x = (p.x - L.ox)/L.dw; if(S.mirror) x = 1-x; return { x, y:(p.y - L.oy)/L.dh }; }
+const dist = (a,b)=> Math.hypot(a.x-b.x, a.y-b.y);
+const rnd = (a,b)=> a + Math.random()*(b-a);
+const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
+
+/* ================= なめらかさ（One Euro フィルター） ================= */
+function LowPass(){ this.y=null; }
+LowPass.prototype.f = function(x,a){ this.y = (this.y===null) ? x : a*x + (1-a)*this.y; return this.y; };
+function OneEuro(minCut, beta){ this.minCut=minCut; this.beta=beta; this.x=new LowPass(); this.dx=new LowPass(); this.prev=null; }
+OneEuro.prototype.alpha = function(cut, dt){ const tau=1/(2*Math.PI*cut); return 1/(1+tau/dt); };
+OneEuro.prototype.filter = function(v, dt){
+  if(this.prev===null){ this.prev=v; this.dx.y=0; return this.x.f(v,1); }
+  dt = Math.max(dt, 1/240);
+  const d = (v-this.prev)/dt; this.prev=v;
+  const ed = this.dx.f(d, this.alpha(1.0, dt));
+  return this.x.f(v, this.alpha(this.minCut + this.beta*Math.abs(ed), dt));
+};
+OneEuro.prototype.reset = function(){ this.x=new LowPass(); this.dx=new LowPass(); this.prev=null; };
+
+function makePt(id){
+  const foot = id[1]==='F';
+  return { id, seen:false, tx:0, ty:0, x:0, y:0, px:0, py:0, a:0, lastSeen:0, trail:[],
+    fx:new OneEuro(foot?0.9:1.2, foot?0.01:0.012), fy:new OneEuro(foot?0.9:1.2, foot?0.01:0.012) };
+}
+
+/* ================= あそぶ人 ================= */
+function makeBody(){ return {ok:false, torso:0, arm:0, armN:0, leg:0, legN:0, cx:0, sw:0, RS:null, LS:null, refSY:0, noseOff:null, ankY:null, ankT:-1e9, dir:1}; }
+function makePlayer(i){
+  const pts = {}; PTS.forEach(id=>pts[id]=makePt(id));
+  return { i, active:false, cx:0, cy:0, sw:0, lm:null, lastSeen:0, pts, b:makeBody(), score:0, color:pColor(i),
+    task:null, spawnT:0, rot:0, hi:0, fi:0, hiL:null, fiL:null, sq:0, fs:'R', bs:'L', feetMiss:0, wrongCd:0 };
+}
+let players = [];
+let colorsFixed = false;
+function resetPlayers(){ players = []; colorsFixed = false; for(let i=0;i<S.players;i++) players.push(makePlayer(i)); }
+const two = ()=> players.length===2;
+function pColor(i){ return i===0 ? S.colP1 : S.colP2; }
+function sideName(pl){ return pl.i===0 ? R_('左','ひだり')+'がわ' : R_('右','みぎ')+'がわ'; }
+function zoneOf(pl){ if(!two()) return {xa:0, xb:W}; return pl.i===0 ? {xa:0, xb:W/2} : {xa:W/2, xb:W}; }
+// 体の部位の色（1人のとき：右・左・区別なし）
+function partColor(pl, part){
+  if(two()) return colorsFixed ? pl.color : '#12906A';
+  if(part==='HD') return '#7C4DDB';
+  const lr = part[1]==='H' ? handsLR() : feetLR();
+  if(part==='H' || part==='F' || !lr) return S.colOne;
+  return part[0]==='R' ? S.colR : S.colL;
+}
+
+/* ================= 人の登録と追跡 ================= */
+let poses = [];
+let regCand = null, regLost = false;
+const REG_TIME = 1.6;
+const LOST_MS = 1500;
+
+function bodyOf(lm){
+  const ls = lm[11], rs = lm[12];
+  if(!ls || !rs) return null;
+  const a = toScr(ls), b = toScr(rs);
+  let cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+  const lh=lm[23], rh=lm[24];
+  if(lh && rh && lh.visibility>0.5 && rh.visibility>0.5){
+    const c=toScr(lh), d=toScr(rh); cx=(cx+(c.x+d.x)/2)/2; cy=(cy+(c.y+d.y)/2)/2;
+  }
+  return { cx, cy, sw: Math.hypot(a.x-b.x, a.y-b.y) };
+}
+function handsUp(lm){
+  const lw=lm[15], rw=lm[16], ls=lm[11], rs=lm[12];
+  if(!lw||!rw||!ls||!rs) return false;
+  if(lw.visibility<0.5 || rw.visibility<0.5) return false;
+  return lw.y < ls.y - 0.02 && rw.y < rs.y - 0.02;
+}
+function assignPoses(){
+  const bodies = [];
+  for(const lm of poses){ const b = bodyOf(lm); if(b) bodies.push({lm, b}); }
+  const pairs = [];
+  for(const pl of players){
+    if(!pl.active) continue;
+    const lim = Math.max(MIN*0.2, pl.sw*1.6);
+    bodies.forEach((o,j)=>{ const d = Math.hypot(o.b.cx-pl.cx, o.b.cy-pl.cy); if(d<lim) pairs.push({pl, j, d}); });
+  }
+  pairs.sort((a,b)=>a.d-b.d);
+  const usedP = new Set(), usedB = new Set(), match = new Map();
+  for(const p of pairs){
+    if(usedP.has(p.pl) || usedB.has(p.j)) continue;
+    usedP.add(p.pl); usedB.add(p.j); match.set(p.pl, bodies[p.j]);
+  }
+  return { match, free: bodies.filter((o,j)=>!usedB.has(j)) };
+}
+
+/* ================= 体の大きさをはかる =================
+   うで（肩→ひじ→手首）、あし（こし→ひざ→足首）、どう（肩→こし）の長さを、
+   見えたときに少しずつ更新する。長く見えたときはすぐ大きく、短く見えたとき（カメラの方へのばしたときなど）はゆっくり小さく。
+   立ったときの肩の高さ（refSY）と、ゆか（足首のいちばん下）もおぼえておく。 */
+function updBody(pl, lm, dt, now){
+  const B = pl.b;
+  const P = (i,v)=> (lm[i] && lm[i].visibility > (v||0.5) && lm[i].y < 1.02) ? toScr(lm[i]) : null;
+  const ls=P(11), rs=P(12); if(!ls||!rs) return;
+  const ms = {x:(ls.x+rs.x)/2, y:(ls.y+rs.y)/2};
+  const sw = dist(ls,rs);
+  if(Math.abs(rs.x-ls.x) > MIN*0.02) B.dir = rs.x > ls.x ? 1 : -1;
+  const a = B.ok ? 0.35 : 1;
+  B.RS = B.RS ? {x:B.RS.x+(rs.x-B.RS.x)*a, y:B.RS.y+(rs.y-B.RS.y)*a} : rs;
+  B.LS = B.LS ? {x:B.LS.x+(ls.x-B.LS.x)*a, y:B.LS.y+(ls.y-B.LS.y)*a} : ls;
+  B.cx = B.ok ? B.cx + (ms.x-B.cx)*0.35 : ms.x;
+  B.sw = B.ok ? B.sw + (sw-B.sw)*0.2 : sw;
+  const lh=P(23), rh=P(24);
+  if(lh && rh){
+    const t = dist(ms, {x:(lh.x+rh.x)/2, y:(lh.y+rh.y)/2});
+    B.torso = !B.torso ? t : B.torso + (t-B.torso)*(t>B.torso ? 0.2 : 0.03);
+  }
+  if(!B.torso) B.torso = sw*1.25;
+  const seg2 = (i,j,k,v)=>{ const A=P(i,v), Bq=P(j,v), C=P(k,v); return (A&&Bq&&C) ? dist(A,Bq)+dist(Bq,C) : 0; };
+  const am = Math.max(seg2(11,13,15), seg2(12,14,16));
+  if(am>0){ B.arm = !B.armN ? am : B.arm + (am-B.arm)*(am>B.arm ? 0.25 : 0.01); B.armN++; }
+  const lgm = Math.max(seg2(23,25,27,0.4), seg2(24,26,28,0.4));
+  if(lgm>0){ B.leg = !B.legN ? lgm : B.leg + (lgm-B.leg)*(lgm>B.leg ? 0.2 : 0.01); B.legN++; }
+  const T = B.torso;
+  B.armE = clamp(B.armN ? B.arm : T*1.1, T*0.85, T*1.4);
+  B.legE = clamp(B.legN ? B.leg : T*1.6, T*1.25, T*2.0);
+  // 立ったときの肩の高さ：上へはすぐ、下へはゆっくり（しゃがんでも すぐには 下がらない）
+  if(!B.ok) B.refSY = ms.y;
+  else if(ms.y < B.refSY) B.refSY += (ms.y-B.refSY)*0.5;
+  else B.refSY += (ms.y-B.refSY)*Math.min(1, dt*0.12);
+  const n = P(0); if(n){ const o = n.y - ms.y; B.noseOff = B.noseOff==null ? o : B.noseOff + (o-B.noseOff)*0.1; }
+  // ゆか：足首のいちばん下。下へはすぐ、上へはゆっくり（足を上げても すぐには 上がらない）
+  const la=P(27,0.4), ra=P(28,0.4);
+  if(la||ra){
+    const y = Math.max(la?la.y:-1e9, ra?ra.y:-1e9);
+    if(B.ankY==null) B.ankY = y;
+    else if(y > B.ankY) B.ankY += (y-B.ankY)*0.4;
+    else B.ankY += (y-B.ankY)*Math.min(1, dt*0.15);
+    B.ankT = now;
+  }
+  B.ok = true;
+}
+// まとを置くための「体の地図」
+function frameOf(pl, now){
+  const B = pl.b, T = B.torso, arm = B.armE, leg = B.legE;
+  const sy = B.refSY, hy = sy + T;
+  const floor = (B.ankY!=null && now - B.ankT < 4000) ? B.ankY + leg*0.03 : hy + leg*1.02;
+  const noseY = sy + (B.noseOff!=null ? B.noseOff : -T*0.35);
+  return { cx:B.cx, sw:B.sw, T, arm, leg, sy, hy, floor, noseY, dir:B.dir, RS:B.RS, LS:B.LS };
+}
+const sdir = (F,s)=> s==='R' ? F.dir : -F.dir;          // その側が画面のどちら向きか
+const shX = (F,s)=> (s==='R' ? F.RS : F.LS).x;
+
+/* ================= 部位の位置 ================= */
+function handPoint(lm, h){
+  const ix = HAND_LM[h];
+  const w = lm[ix.w], i = lm[ix.i], p = lm[ix.p];
+  if(!w || w.visibility < 0.35) return null;
+  let x=w.x, y=w.y;
+  if(i && p){ const mx=(i.x+p.x)/2, my=(i.y+p.y)/2; x = w.x + (mx-w.x)*1.25; y = w.y + (my-w.y)*1.25; }
+  if(x < -0.05 || x > 1.05 || y < -0.05 || y > 1.05) return null;
+  return toScr({x,y});
+}
+function ptOf(lm, id){
+  if(id==='RH') return handPoint(lm,'R');
+  if(id==='LH') return handPoint(lm,'L');
+  if(id==='HD'){ const n=lm[0]; if(!n || n.visibility<0.5) return null; return toScr(n); }
+  let x=0, y=0, c=0;
+  for(const i of FOOT_LM[id[0]]){ const p=lm[i]; if(p && p.visibility>0.3 && p.y<1.02 && p.x>-0.05 && p.x<1.05){ x+=p.x; y+=p.y; c++; } }
+  if(!c) return null;
+  return toScr({x:x/c, y:y/c});
+}
+
+let lastDetNow = 0;
+function onDetection(now){
+  const dt = Math.min(0.1, Math.max(1/120, (now - (lastDetNow||now-33))/1000)); lastDetNow = now;
+  const { match, free } = assignPoses();
+  for(const pl of players){
+    const m = pl.active ? match.get(pl) : null;
+    if(m){
+      pl.cx = pl.cx*0.4 + m.b.cx*0.6; pl.cy = pl.cy*0.4 + m.b.cy*0.6;
+      pl.sw = pl.sw*0.8 + m.b.sw*0.2; pl.lm = m.lm; pl.lastSeen = now;
+      updBody(pl, m.lm, dt, now);
+    }
+    for(const id of PTS){
+      const pt = pl.pts[id];
+      const p = m ? ptOf(m.lm, id) : null;
+      if(p){
+        if(!pt.seen || now - pt.lastSeen > 400){ pt.fx.reset(); pt.fy.reset(); }
+        pt.tx = pt.fx.filter(p.x, dt); pt.ty = pt.fy.filter(p.y, dt);
+        if(!pt.seen){ pt.x=pt.tx; pt.y=pt.ty; pt.px=pt.x; pt.py=pt.y; pt.trail.length=0; }
+        pt.seen = true; pt.lastSeen = now;
+      }else if(now - pt.lastSeen > 250){
+        pt.seen = false;
+      }
+    }
+  }
+
+  if(phase!=='register') return;
+  const slot = players.find(p=>!p.active);
+  if(!slot) return;
+  let cand = null, cb = null;
+  for(const o of free){
+    if(!handsUp(o.lm)) continue;
+    const d = regCand ? Math.hypot(o.b.cx-regCand.cx, o.b.cy-regCand.cy) : 0;
+    if(!cand || d < cb.d){ cand = o; cb = {b:o.b, d}; }
+  }
+  if(cand){
+    const lim = Math.max(MIN*0.2, cb.b.sw*1.6);
+    if(regCand && cb.d < lim){ regCand.t += dt; regCand.cx=cb.b.cx; regCand.cy=cb.b.cy; regCand.lm=cand.lm; }
+    else { regCand = {cx:cb.b.cx, cy:cb.b.cy, t:0, lm:cand.lm}; }
+    if(regCand.t >= REG_TIME){
+      const keepBody = slot.b.ok && regLost;
+      Object.assign(slot, {active:true, cx:regCand.cx, cy:regCand.cy, sw:cb.b.sw, lm:cand.lm, lastSeen:now});
+      if(!keepBody) slot.b = makeBody();
+      updBody(slot, cand.lm, dt, now);
+      PTS.forEach(id=>{ slot.pts[id].seen=false; });
+      slot.task = null; slot.spawnT = 0.4;
+      regCand = null; SFX.reg();
+      if(players.every(p=>p.active)){
+        if(two() && !colorsFixed){
+          players.sort((a,b)=>a.cx-b.cx);
+          players.forEach((p,i)=>{ p.i=i; p.color=pColor(i); });
+        }
+        colorsFixed = true;
+        enterCountdown();
+      }else{
+        regMessage();
+      }
+    }
+  }else if(regCand){
+    regCand.t -= dt*2;
+    if(regCand.t <= 0) regCand = null;
+  }
+  msgBarI.style.width = (regCand ? Math.min(100, regCand.t/REG_TIME*100) : 0) + '%';
+}
+
+/* ================= ゲームの状態 ================= */
+let phase = 'off';
+let cdT = 0, cdShown = -1, regMsgT = 0;
+let remain = 0;
+let particles = [], floats = [];
+let gameStarted = false;
+let raf = 0, lastNow = 0, lastVT = -1, lastTs = 0;
+let msgTimer = 0;
+
+function setMsg(main, sub, opt){
+  opt = opt||{};
+  clearTimeout(msgTimer);
+  if(main===null){ msgEl.hidden=true; return; }
+  msgEl.hidden=false;
+  msgEl.className = (opt.big ? 'big' : '') + (opt.word ? ' word' : '');
+  msgEl.style.setProperty('--c', opt.color || '#12906A');
+  msgMain.innerHTML = main; msgSub.innerHTML = sub||''; msgSub.hidden = !sub;
+  msgBar.hidden = !opt.bar;
+  if(opt.pop){ void msgEl.offsetWidth; msgEl.classList.add('pop'); }
+}
+
+/* ================= 開始・終了 ================= */
+$('btnGo').addEventListener('click', ()=>{ unlockAudio(); startStage(); });
+
+async function startStage(){
+  if(!DEMO){
+    if(!window.isSecureContext){
+      waitShow('このページは https で ひらいてね', 'カメラは https のページでしか つかえません。', true); return;
+    }
+    waitShow('じゅんび しているよ', 'カメラを じゅんびしているよ');
+    try{ await startCamera(); }
+    catch(e){
+      stopCamera();
+      waitShow('カメラが つかえなかったよ',
+        'iPadの「'+R_('設定','せってい')+'」→「Safari」→「カメラ」を「'+R_('許可','きょか')+'」にして、もういちど ためしてね。<br>（ほかのアプリでカメラを つかっていないかも たしかめてね）', true);
+      return;
+    }
+    try{
+      $('waitSub').innerHTML = R_('読','よ')+'み'+R_('取','と')+'りの じゅんびを しているよ（はじめては すこし じかんが かかるよ）';
+      await loadModel();
+    }catch(e){
+      waitShow(R_('読','よ')+'み'+R_('取','と')+'りの じゅんびが できなかったよ',
+        'インターネットに つながっているか たしかめて、もういちど ためしてね。', true);
+      return;
+    }
+    waitHide();
+  }
+  show(scrStage);
+  resize();
+  keepAwake(true);
+  resetPlayers();
+  newGame();
+  enterRegister(false);
+  lastNow = performance.now();
+  cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+}
+function newGame(){
+  remain = S.time;
+  for(const pl of players){ pl.score=0; pl.task=null; pl.spawnT=0.3; pl.rot=0; pl.hi=0; pl.fi=0; pl.sq=0; pl.feetMiss=0; }
+  particles = []; floats = [];
+  gameStarted = false;
+  hudScore.hidden = true; hudTime.hidden = true; hudScore2.hidden = true; hudGrow2.hidden = true;
+  updateHud();
+}
+function regMessage(){
+  const slot = players.find(p=>!p.active);
+  const RY = R_('両手','りょうて');
+  if(regLost && slot){
+    if(!two()) setMsg('すがたが みえなくなったよ', RY+'を あげると つづきから はじまるよ', {bar:true});
+    else setMsg(sideName(slot)+'の '+R_('人','ひと')+'が みえなくなったよ', RY+'を あげると つづきから はじまるよ', {bar:true});
+  }else if(!two()){
+    setMsg(RY+'を あげてね', 'あげた '+R_('人','ひと')+'を おぼえて、'+R_('体','からだ')+'の '+R_('大','おお')+'きさを はかるよ', {bar:true});
+  }else if(!players.some(p=>p.active)){
+    setMsg('ひとりめ、'+RY+'を あげてね', 'ふたりで あそぶよ。ひとりずつ おぼえるよ', {bar:true});
+  }else{
+    setMsg('ふたりめも '+RY+'を あげてね', 'ひとりめは おぼえたよ', {bar:true});
+  }
+  msgBarI.style.width='0%';
+}
+function enterRegister(lost){ phase = 'register'; regCand = null; regLost = lost; regMessage(); }
+function enterCountdown(){
+  phase = 'countdown'; cdT = 3.99; cdShown = -1; regMsgT = 0.6;
+  setMsg(two() ? 'ふたりとも おぼえたよ！' : 'おぼえたよ！', footOn() ? R_('足','あし')+'もとまで うつっているか たしかめてね' : null);
+}
+function enterPlay(){
+  phase = 'play'; gameStarted = true;
+  updateHud();
+  hudScore.hidden=false; hudTime.hidden=false;
+  hudScore2.hidden=!two(); hudGrow2.hidden=!two();
+  setMsg('スタート！', null, {big:true, word:true, color:'#E5487A', pop:true});
+  msgTimer = setTimeout(()=>{ if(phase==='play') setMsg(null); }, 750);
+  SFX.go();
+}
+function endGame(){
+  phase = 'end'; cancelAnimationFrame(raf); raf=0;
+  SFX.end(); keepAwake(false);
+  setMsg(null);
+  renderResult();
+  show(scrResult);
+}
+function renderResult(){
+  const box = $('resBoxes'); box.innerHTML=''; box.className='lr';
+  const mk = (label, n, color)=>{
+    const d=document.createElement('div');
+    d.style.borderColor=color; d.style.color='#1E2833';
+    d.innerHTML = label+'<br><em style="color:'+color+'">'+n+'</em>';
+    box.appendChild(d);
+  };
+  const num=$('resNum'), lbl=$('resLbl');
+  const t = 'できた'+R_('数','かず');
+  if(!two()){ lbl.innerHTML = t; num.hidden=false; num.textContent = players[0].score; }
+  else if(S.team==='coop'){
+    lbl.innerHTML = 'ふたりで '+t; num.hidden=false; num.textContent = players[0].score + players[1].score;
+    players.forEach(pl=>mk(sideName(pl), pl.score, pl.color));
+  }else{
+    lbl.innerHTML = t; num.hidden=true; box.className='lr wide';
+    players.forEach(pl=>mk(sideName(pl), pl.score, pl.color));
+  }
+}
+function goHome(){
+  phase='off'; cancelAnimationFrame(raf); raf=0; keepAwake(false);
+  setMsg(null); renderAll(); show(scrStart);
+}
+$('btnStop').addEventListener('click', ()=>{ if(gameStarted) endGame(); else goHome(); });
+$('btnAgain').addEventListener('click', ()=>{
+  unlockAudio();
+  show(scrStage); resize(); keepAwake(true);
+  if(players.length!==S.players) resetPlayers();
+  newGame();
+  if(players.every(p=>p.active)){
+    const t = performance.now(); players.forEach(p=>{ p.lastSeen=t; });
+    enterCountdown(); setMsg('もういちど いくよ', null);
+  }else{ enterRegister(false); }
+  lastNow = performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
+});
+$('btnHome').addEventListener('click', goHome);
+// 画面をタップすると、つぎの おだいへ
+cv.addEventListener('pointerdown', ()=>{
+  if(phase!=='play') return;
+  let any = false;
+  for(const pl of players){ if(pl.task && pl.task.state==='live'){ skipTask(pl, true); any = true; } }
+  if(any) SFX.skip();
+});
+
+function updateHud(){
+  hudTime.textContent = 'のこり ' + Math.max(0, Math.ceil(remain)) + '秒';
+  if(!two()){
+    hudScore.textContent = 'できた ' + (players[0] ? players[0].score : 0);
+    hudScore.style.boxShadow = '';
+  }else{
+    hudScore.textContent = 'できた ' + players[0].score;
+    hudScore2.textContent = 'できた ' + players[1].score;
+    hudScore.style.boxShadow = 'inset 0 0 0 5px '+players[0].color+', 0 2px 8px rgba(0,0,0,.15)';
+    hudScore2.style.boxShadow = 'inset 0 0 0 5px '+players[1].color+', 0 2px 8px rgba(0,0,0,.15)';
+  }
+}
+
+/* ================= おだい（まと）を つくる ================= */
+const SIZE_K = { s:0.22, m:0.3, l:0.4 };
+const REACH = { near:[0.45,0.68], normal:[0.55,0.88], far:[0.75,0.93] };
+function targR(F){ return clamp(F.T*SIZE_K[S.size], MIN*0.035, MIN*0.13); }
+const PR = ()=> MIN*0.04;   // 手・足の しるしの 大きさ
+
+// 使う部位（スロット）
+function slotsAll(){
+  const out = [], lr = S.lr;
+  const add = (set, k)=>{
+    if(set==='R') out.push({p:'R'+k, s:'R', k});
+    else if(set==='L') out.push({p:'L'+k, s:'L', k});
+    else if(set==='one') out.push({p:k, s:null, k});
+    else if(set==='both'){ out.push({p:lr?'R'+k:k, s:'R', k}, {p:lr?'L'+k:k, s:'L', k}); }
+  };
+  add(S.hand, 'H'); add(S.foot, 'F');
+  return out;
+}
+
+// 手の きまった場所（s：右手なら'R'、置く側）
+function handPos(F, s, name){
+  const d = sdir(F,s), sx = shX(F,s), A = F.arm, T = F.T;
+  switch(name){
+    case 'ue':     return {x:sx + d*0.1*A,  y:F.sy - 0.92*A};
+    case 'naname': return {x:sx + d*0.64*A, y:F.sy - 0.64*A};
+    case 'yoko':   return {x:sx + d*0.9*A,  y:F.sy + 0.02*A};
+    case 'kata':   return {x:sx, y:F.sy};
+    case 'atama':  return {x:F.cx + d*0.35*T, y:F.noseY - 0.3*T};
+    case 'koshi':  return {x:F.cx + d*0.55*F.sw, y:F.hy - 0.08*T};
+    case 'hiza':   return {x:F.cx + d*0.3*F.sw, y:F.hy + 0.5*F.leg};
+    case 'yuka':   return {x:F.cx + d*0.55*F.sw, y:F.floor - 0.06*F.leg};
+  }
+  return {x:sx + d*0.9*A, y:F.sy};
+}
+// クロス：右手で 左がわ（体の まんなかを こえる）。とどく ところに かえる
+function crossPos(F, s, name){
+  const o = s==='R' ? 'L' : 'R', d = sdir(F,o);
+  if(name==='yoko') name = 'kata';
+  if(name==='naname' || name==='ue') return {x:F.cx + d*0.15*F.sw, y:F.sy - 0.8*F.arm};
+  if(name==='atama') return {x:F.cx + d*0.3*F.T, y:F.noseY - 0.3*F.T};
+  if(name==='koshi') return {x:F.cx + d*0.15*F.sw, y:F.hy - 0.25*F.T};
+  return handPos(F, o, name);
+}
+// 足の きまった場所
+function footPos(F, s, name, r){
+  const d = sdir(F,s), Lg = F.leg, fx = F.cx + d*0.22*F.sw;
+  switch(name){
+    case 'hiraku':  return {x:fx + d*Math.max(0.24*Lg, 1.9*(r||0)), y:F.floor - 0.03*Lg};
+    case 'sukoshi': return {x:fx + d*0.03*Lg, y:F.floor - 0.2*Lg};
+    case 'takaku':  return {x:fx + d*0.04*Lg, y:F.floor - 0.45*Lg};
+    case 'yokoage': return {x:F.cx + d*0.5*Lg, y:F.floor - 0.2*Lg};
+  }
+  return {x:fx, y:F.floor - 0.2*Lg};
+}
+const mirrorP = (F,p)=> ({x:2*F.cx - p.x, y:p.y});
+
+function clampZ(pl, p, r){
+  const z = zoneOf(pl), top = HUDH + r + MIN*0.075;
+  return { x: clamp(p.x, z.xa + r + 6, z.xb - r - 6), y: clamp(p.y, top, H - r - 6) };
+}
+function farFrom(p, list, d){ return list.every(q=>dist(p,q) >= d); }
+
+// あちこち：手（肩から うでの とどく 円の 中）
+function randHand(pl, F, s, o){
+  const A = F.arm, rg = REACH[S.reach], d = sdir(F,s), sx = shX(F,s), sy = F.sy, r = o.r;
+  const cur = pl.pts[s+'H'];
+  let best = null;
+  for(let k=0;k<50;k++){
+    let p;
+    if(o.cross){
+      const ang = rnd(-80, 35)*Math.PI/180, dd = A*rnd(0.55, 0.9);
+      p = {x: sx - d*Math.abs(Math.cos(ang))*dd, y: sy + Math.sin(ang)*dd};
+      if((p.x - F.cx)*d > -0.2*F.sw) continue;
+    }else{
+      const ang = rnd(-100, o.low ? 80 : 45)*Math.PI/180, dd = A*rnd(rg[0], rg[1]);
+      p = {x: sx + d*Math.cos(ang)*dd, y: sy + Math.sin(ang)*dd};
+      // しゃがむ ときは、肩が さがる ぶんだけ 下まで とどく
+      if(o.low && ang > 45*Math.PI/180) p.y = Math.min(F.floor - 0.06*F.leg, sy + Math.sin(ang)*(dd + 0.45*F.leg));
+    }
+    p = clampZ(pl, p, r);
+    // はしで ずらしたあとも とどくか
+    const reach = dist(p, {x:sx, y:sy});
+    const lim = (o.low && p.y > F.hy) ? A*0.95 + 0.5*F.leg : A*0.95;
+    if(reach > lim) continue;
+    if(!farFrom(p, o.avoid, r*2.3)) continue;
+    if(cur.seen && dist(p, cur) < r*2.2) continue;
+    best = p; break;
+  }
+  return best || clampZ(pl, handPos(F, s, 'yoko'), r);
+}
+// あちこち：足（こしから あしの とどく ところ）
+function randFoot(pl, F, s, o){
+  const Lg = F.leg, d = sdir(F,s), r = o.r;
+  const hip = {x:F.cx + d*0.27*F.sw, y:F.hy};
+  const cur = pl.pts[s+'F'];
+  const rg = REACH[S.reach];
+  for(let k=0;k<50;k++){
+    let p;
+    const fx = F.cx + d*0.22*F.sw;    // 立っているときの 足の 位置
+    if(o.lift){ p = {x: F.cx + d*rnd(0.08, 0.55)*Lg, y: F.floor - rnd(0.12, 0.25 + rg[1]*0.3)*Lg}; }
+    else      { const lo = Math.max(0.18*Lg, 1.9*r); p = {x: fx + d*rnd(lo, Math.max(0.4*Lg, lo*1.3)), y: F.floor - rnd(0, 0.04)*Lg}; }
+    p = clampZ(pl, p, r);
+    if(o.lift){
+      if(dist(p, hip) > Lg*0.97) continue;
+      if(cur.seen && dist(p, cur) < r*1.8) continue;
+    }
+    if(!farFrom(p, o.avoid, r*2.2)) continue;
+    return p;
+  }
+  return clampZ(pl, footPos(F, s, o.lift ? 'sukoshi' : 'hiraku', r), r);
+}
+
+function mkT(slot, p, r, name){ return { part:slot.p, k:slot.k, s:slot.s, x:p.x, y:p.y, r, name:name||'', cov:false, lit:0 }; }
+
+function touchTargets(pl, F, slots, how, r){
+  const hands = slots.filter(o=>o.k==='H'), feet = slots.filter(o=>o.k==='F');
+  const out = [], avoid = [];
+  const push = t=>{ out.push(t); avoid.push(t); };
+  let lifted = false;
+  if(feet.length===2 && how==='same'){
+    const p = randFoot(pl, F, feet[0].s, {lift:false, r, avoid});
+    push(mkT(feet[0], p, r)); push(mkT(feet[1], clampZ(pl, mirrorP(F,p), r), r));
+  }else if(feet.length){
+    // 足を あげるのは かたほうだけ
+    const li = feet.length===2 ? (Math.random()<0.5 ? 0 : 1) : (Math.random()<0.75 ? 0 : -1);
+    feet.forEach((o,i)=>{ const lift = i===li; if(lift) lifted = true; push(mkT(o, randFoot(pl, F, o.s, {lift, r, avoid}), r)); });
+  }
+  const low = S.low && !lifted;
+  if(hands.length===2 && how==='same'){
+    const p = randHand(pl, F, hands[0].s, {r, avoid, low});
+    push(mkT(hands[0], p, r));
+    const q = clampZ(pl, mirrorP(F,p), r);
+    push(mkT(hands[1], q, r));
+  }else if(hands.length===2 && how==='cross'){
+    hands.forEach(o=>push(mkT(o, randHand(pl, F, o.s, {r, avoid, cross:true}), r)));
+  }else{
+    hands.forEach((o,i)=>{
+      let p = randHand(pl, F, o.s, {r, avoid, low});
+      if(i===1 && how==='diff'){
+        // 左右ちがう：かがみの 位置から はなす
+        for(let k=0;k<12 && dist(p, mirrorP(F, out[out.length-1]))<r*2.5;k++) p = randHand(pl, F, o.s, {r, avoid, low});
+      }
+      push(mkT(o, p, r));
+    });
+  }
+  return out;
+}
+
+function pickPos(pl, list, key){
+  if(!list.length) return null;
+  if(S.poseOrder==='seq'){ const v = list[pl[key] % list.length]; pl[key]++; return v; }
+  let v = list[Math.floor(Math.random()*list.length)];
+  for(let k=0;k<6 && list.length>1 && v===pl[key+'L'];k++) v = list[Math.floor(Math.random()*list.length)];
+  pl[key+'L'] = v; return v;
+}
+function poseTargets(pl, F, slots, how, r){
+  const hands = slots.filter(o=>o.k==='H'), feet = slots.filter(o=>o.k==='F');
+  const HN = S.poseHand.length ? S.poseHand : ['ue'], FN = S.poseFoot.length ? S.poseFoot : ['sukoshi'];
+  const out = [];
+  let fname = feet.length ? pickPos(pl, FN, 'fi') : null;
+  const lifted = !!(fname && LIFTED[fname]);
+  const safeH = n=>{ if(!(lifted && LOW_HAND[n])) return n; return HN.find(x=>!LOW_HAND[x]) || 'koshi'; };
+  if(feet.length===2 && lifted){
+    // 両足のときも、あげるのは かたほうずつ（こうたい）
+    pl.fs = pl.fs==='R' ? 'L' : 'R';
+    const o = feet.find(x=>x.s===pl.fs) || feet[0];
+    out.push(mkT(o, clampZ(pl, footPos(F, o.s, fname, r), r), r, POS_JP[fname]));
+  }else{
+    feet.forEach(o=>out.push(mkT(o, clampZ(pl, footPos(F, o.s, fname, r), r), r, POS_JP[fname])));
+  }
+  if(hands.length){
+    const h1 = safeH(pickPos(pl, HN, 'hi'));
+    let h2 = h1;
+    if(how==='diff' && hands.length===2){
+      if(HN.length>1){
+        if(S.poseOrder==='seq') h2 = HN[(HN.indexOf(h1)+1) % HN.length];
+        else { const rest = HN.filter(x=>x!==h1); h2 = rest[Math.floor(Math.random()*rest.length)]; }
+      }
+      h2 = safeH(h2);
+    }
+    hands.forEach((o,i)=>{
+      const n = i===0 ? h1 : h2;
+      if(how==='cross') out.push(mkT(o, clampZ(pl, crossPos(F, o.s, n), r), r, 'はんたいの '+POS_JP[n==='yoko'?'kata':n==='naname'?'ue':n]));
+      else out.push(mkT(o, clampZ(pl, handPos(F, o.s, n), r), r, POS_JP[n]));
+    });
+  }
+  return out;
+}
+
+function makeTask(pl, now){
+  if(!pl.b.ok) return null;
+  const F = frameOf(pl, now), r = targR(F);
+  let tg = [], keep = S.keep, kind = S.mode, title = '';
+  if(S.mode==='balance'){
+    const fixed = S.foot==='R' ? 'R' : S.foot==='L' ? 'L' : null;
+    if(!fixed) pl.bs = pl.bs==='R' ? 'L' : 'R';
+    const s = fixed || pl.bs;
+    const part = (fixed || S.lr) ? s+'F' : 'F';
+    tg.push(mkT({p:part, k:'F', s}, clampZ(pl, footPos(F, s, S.balFoot, r), r), r, ''));
+    if(handOn() && S.balHand!=='none'){
+      slotsAll().filter(o=>o.k==='H').forEach(o=>{
+        const hs = o.s || (Math.random()<0.5?'R':'L');
+        tg.push(mkT(Object.assign({}, o, {s:hs}), clampZ(pl, handPos(F, hs, S.balHand), r), r, POS_JP[S.balHand]));
+      });
+    }
+    keep = S.balKeep;
+    title = PART_JP[part]+'で バランス';
+  }else{
+    let slots = slotsAll().map(o=>Object.assign({}, o));
+    if(!slots.length) slots = [{p:'H', s:null, k:'H'}];
+    slots.forEach(o=>{ if(!o.s) o.s = Math.random()<0.5 ? 'R' : 'L'; });
+    const how = slots.length>1 ? S.how : 'one';
+    if(how==='one') slots = [slots[pl.rot++ % slots.length]];
+    if(S.mode==='pose' && S.poseSquat && (++pl.sq % 4)===0){
+      tg.push({part:'HD', k:'D', s:'R', x:F.cx, y:0, r:r*1.15, name:'', cov:false, lit:0});
+      const p = clampZ(pl, {x:F.cx, y:F.noseY + 0.33*F.leg}, r*1.15); tg[0].x = p.x; tg[0].y = p.y;
+      title = 'しゃがむ';
+    }else if(S.mode==='touch'){
+      tg = touchTargets(pl, F, slots, how, r);
+    }else{
+      tg = poseTargets(pl, F, slots, how, r);
+    }
+    if(!title) title = taskTitle(tg, how);
+  }
+  return { tg, keep, kind, title, hold:0, age:0, state:'in', outT:0, cx0:F.cx, sw0:F.sw, away:0, lastSec:0, ok:false };
+}
+function taskTitle(tg, how){
+  if(S.mode==='touch') return tg.length===1 ? PART_JP[tg[0].part]+'で タッチ' : 'ぜんぶ いっしょに タッチ';
+  // 同じ場所の 両手は「りょうて」に まとめる
+  const hs = tg.filter(t=>t.k==='H'), fs = tg.filter(t=>t.k==='F');
+  const parts = [];
+  if(hs.length===2 && hs[0].name===hs[1].name) parts.push((how==='cross'?'てを クロス ':'りょうて ')+hs[0].name.replace('はんたいの ',''));
+  else hs.forEach(t=>parts.push(PART_JP[t.part]+' '+t.name));
+  if(fs.length===2 && fs[0].name===fs[1].name) parts.push('りょうあし '+fs[0].name);
+  else fs.forEach(t=>parts.push(PART_JP[t.part]+' '+t.name));
+  return parts.join(' ＋ ');
+}
+
+/* ================= おだいの はんてい ================= */
+const CAND = {RH:['RH'], LH:['LH'], H:['RH','LH'], RF:['RF'], LF:['LF'], F:['RF','LF'], HD:['HD']};
+const ptOK = pt=> pt.seen && pt.a > 0.5;
+function covers(pt, t, held){
+  const rad = t.r*(t.k==='H' ? 1 : 1.15) + PR()*0.5;
+  return dist(pt, t) < rad*(held ? 1.3 : 1);
+}
+function checkTask(pl, task){
+  const tgs = task.tg, held = task.hold > 0;
+  const opts = tgs.map(t=> CAND[t.part].filter(id=> ptOK(pl.pts[id]) && covers(pl.pts[id], t, held)));
+  tgs.forEach((t,i)=>{ const was = t.cov; t.cov = opts[i].length>0; if(t.cov && !was && tgs.length>1) SFX.touch(); });
+  const used = new Set();
+  const rec = i=>{
+    if(i===tgs.length) return true;
+    for(const id of opts[i]){ if(used.has(id)) continue; used.add(id); if(rec(i+1)) return true; used.delete(id); }
+    return false;
+  };
+  return rec(0);
+}
+// ちがう手（足）で さわっていたら おしえる
+function wrongHint(pl, task){
+  if(pl.wrongCd > 0) return;
+  for(const t of task.tg){
+    if(t.cov || !(t.part==='RH'||t.part==='LH'||t.part==='RF'||t.part==='LF')) continue;
+    const other = (t.part[0]==='R' ? 'L' : 'R') + t.part[1];
+    const pt = pl.pts[other];
+    if(ptOK(pt) && covers(pt, t, false)){
+      pl.wrongCd = 1.6; SFX.wrong();
+      addFloat(t.x, t.y - t.r - MIN*0.04, PART_JP[t.part]+'で さわってね', partColor(pl, t.part));
+      return;
+    }
+  }
+}
+function skipTask(pl, byTap){
+  const task = pl.task; if(!task) return;
+  task.state = 'out'; task.outT = 0; task.ok = false;
+  pl.spawnT = byTap ? 0.35 : 0.5;
+}
+function updateGame(dt, now){
+  for(const pl of players){
+    pl.wrongCd = Math.max(0, pl.wrongCd - dt);
+    if(!pl.active) continue;
+    // 足が みえているか
+    const needFeet = pl.task && pl.task.tg.some(t=>t.k==='F');
+    if(needFeet && !pl.pts.RF.seen && !pl.pts.LF.seen) pl.feetMiss += dt; else pl.feetMiss = 0;
+
+    if(pl.task && pl.task.state==='out'){
+      pl.task.outT += dt;
+      if(pl.task.outT > 0.45) pl.task = null; else continue;
+    }
+    if(!pl.task){
+      pl.spawnT -= dt;
+      if(pl.spawnT <= 0){ pl.task = makeTask(pl, now); if(!pl.task) pl.spawnT = 0.2; }
+      continue;
+    }
+    const task = pl.task;
+    task.age += dt;
+    if(task.state==='in' && task.age >= 0.3) task.state = 'live';
+    if(task.state!=='live') continue;
+
+    // 人が 大きく うごいたら、おだいを つくりなおす
+    if(Math.abs(pl.b.cx - task.cx0) > task.sw0*1.3) task.away += dt; else task.away = 0;
+    if(task.away > 1.0){ pl.task = null; pl.spawnT = 0.1; continue; }
+
+    const all = checkTask(pl, task);
+    task.tg.forEach(t=>{ t.lit = t.cov ? Math.min(1, t.lit + dt*8) : Math.max(0, t.lit - dt*5); });
+    if(!all) wrongHint(pl, task);
+    const keep = Math.max(0.12, task.keep);
+    if(all){
+      task.hold += dt;
+      if(task.keep >= 1){ const sec = Math.floor(task.hold); if(sec > task.lastSec && task.hold < keep){ task.lastSec = sec; SFX.hold(sec); } }
+    }else{
+      task.hold = Math.max(0, task.hold - dt*(task.keep >= 1 ? 1.5 : 4));
+      if(task.hold < 1) task.lastSec = 0;
+    }
+    if(task.hold >= keep){
+      task.state = 'out'; task.outT = 0; task.ok = true; pl.score++;
+      task.tg.forEach(t=>burst(t.x, t.y, partColor(pl, t.part), t.r));
+      const c = task.tg.reduce((a,t)=>({x:a.x+t.x/task.tg.length, y:a.y+t.y/task.tg.length}), {x:0,y:0});
+      addFloat(c.x, Math.min(...task.tg.map(t=>t.y)) - task.tg[0].r - MIN*0.03, 'できた！', '#1E2833', Math.max(34, MIN*0.06), 0.9);
+      SFX.hit(); pl.spawnT = 0.55;
+      continue;
+    }
+    if(S.skip > 0 && task.age > S.skip && task.hold <= 0){ skipTask(pl, false); }
+  }
+}
+
+/* ================= メインループ ================= */
+const CD_COL = {3:'#F07A18', 2:'#2C6BDF', 1:'#1FA85A'};
+function detect(now){
+  if(DEMO){ poses = demoPoses(now); return true; }
+  if(!landmarker || video.readyState<2) return false;
+  if(video.currentTime===lastVT) return false;
+  lastVT = video.currentTime;
+  let ts = now; if(ts<=lastTs) ts = lastTs + 1; lastTs = ts;
+  let res;
+  try{ res = landmarker.detectForVideo(video, ts); }catch(e){ return false; }
+  poses = (res && res.landmarks) ? res.landmarks : [];
+  return true;
+}
+function loop(now){
+  raf = requestAnimationFrame(loop);
+  let dt = (now - lastNow)/1000; lastNow = now;
+  if(!(dt>0)) dt = 1/60;
+  dt = Math.min(dt, 1/30);
+  const k = dt*60;
+  if(video.videoWidth && (Math.abs(L.dw/L.dh - video.videoWidth/video.videoHeight) > 0.01)) layoutVideo();
+  if(detect(now)) onDetection(now);
+
+  if(phase==='play' || phase==='countdown'){
+    const lostPl = players.find(p=>p.active && now - p.lastSeen > LOST_MS);
+    if(lostPl){ lostPl.active=false; SFX.lost(); enterRegister(true); }
+  }
+  for(const pl of players){
+    for(const id of PTS){
+      const pt = pl.pts[id];
+      pt.px = pt.x; pt.py = pt.y;
+      if(pt.seen && pl.active){
+        const f = 1 - Math.exp(-dt*28);
+        pt.x += (pt.tx-pt.x)*f; pt.y += (pt.ty-pt.y)*f;
+        pt.a = Math.min(1, pt.a + dt*6);
+        pt.trail.push({x:pt.x, y:pt.y, t:now});
+      }else{
+        pt.a = Math.max(0, pt.a - dt*4);
+      }
+      while(pt.trail.length && now - pt.trail[0].t > 280) pt.trail.shift();
+      if(!pt.seen && pt.trail.length) pt.trail.shift();
+    }
+  }
+  if(phase==='countdown'){
+    if(regMsgT > 0){ regMsgT -= dt; }
+    else{
+      cdT -= dt/0.7;
+      const n = Math.ceil(cdT - 0.99);
+      if(n !== cdShown && n >= 1){ cdShown = n; setMsg(String(n), null, {big:true, color:CD_COL[n], pop:true}); SFX.tick(); }
+      if(cdT <= 1) enterPlay();
+    }
+  }
+  if(phase==='play'){
+    remain -= dt;
+    updateGame(dt, now);
+    if(remain <= 0){ remain = 0; updateHud(); endGame(); return; }
+    updateHud();
+  }
+  updateFx(dt, k);
+  draw(now);
+}
+
+/* ================= こうか ================= */
+function addFloat(x, y, text, color, size, max){
+  floats.push({x, y, text, color:color||'#1E2833', t:0, max:max||1.2, size:size||Math.max(26, MIN*0.042)});
+}
+function burst(x,y,color,r){
+  const n = 22;
+  for(let i=0;i<n;i++){
+    const a = Math.PI*2*i/n + Math.random()*0.3, sp = (2.5+Math.random()*4.5)*(MIN/700);
+    particles.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:0, max:0.55+Math.random()*0.35, color, size:(4+Math.random()*6)*(MIN/700)});
+  }
+  particles.push({ring:true, x, y, life:0, max:0.45, color, r0:r});
+}
+function updateFx(dt, k){
+  for(const p of particles){
+    p.life += dt;
+    if(!p.ring){ p.x += p.vx*k; p.y += p.vy*k; p.vx *= Math.pow(0.93,k); p.vy *= Math.pow(0.93,k); }
+  }
+  particles = particles.filter(p=>p.life<p.max);
+  if(particles.length > 400) particles.splice(0, particles.length-400);
+  for(const f of floats){ f.t += dt; f.y -= 0.6*k*(MIN/700); }
+  floats = floats.filter(f=>f.t<f.max);
+}
+const glowCache = {};
+function glowSprite(color){
+  if(glowCache[color]) return glowCache[color];
+  const c = document.createElement('canvas'); c.width=c.height=128;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0, color+'CC'); gr.addColorStop(0.45, color+'55'); gr.addColorStop(1, color+'00');
+  g.fillStyle = gr; g.fillRect(0,0,128,128);
+  return glowCache[color] = c;
+}
+
+/* ================= 描画 ================= */
+function canvasLabel(text, x, y, size, fill, stroke, maxW){
+  ctx.save(); ctx.font='700 '+Math.round(size)+'px "BIZ UDPGothic", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  if(maxW){ const w = ctx.measureText(text).width; if(w > maxW){ size = size*maxW/w; ctx.font='700 '+Math.round(size)+'px "BIZ UDPGothic", sans-serif'; } }
+  ctx.lineJoin='round'; ctx.lineWidth=Math.max(4, size*0.22); ctx.strokeStyle=stroke||'rgba(255,255,255,0.95)';
+  ctx.strokeText(text, x, y); ctx.fillStyle=fill; ctx.fillText(text, x, y); ctx.restore();
+}
+function drawSkeleton(lm, color, alpha, lw){
+  ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap='round';
+  ctx.beginPath();
+  for(const [a,b] of BONES){
+    const p=lm[a], q=lm[b];
+    if(!p||!q||p.visibility<0.4||q.visibility<0.4) continue;
+    const A=toScr(p), B=toScr(q); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y);
+  }
+  ctx.stroke();
+  const n = lm[0];
+  if(n && n.visibility>0.4){ const N=toScr(n); ctx.beginPath(); ctx.arc(N.x, N.y, lw*2.2, 0, Math.PI*2); ctx.stroke(); }
+  ctx.restore();
+}
+// 手の マーク（てのひら＋ゆび）。mirror：左手は ゆびの むきを はんたいに
+function handGlyph(x, y, s, flip){
+  ctx.save(); ctx.translate(x, y); ctx.scale(flip ? -1 : 1, 1);
+  ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#FFFFFF'; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.ellipse(0, s*0.18, s*0.36, s*0.34, 0, 0, Math.PI*2); ctx.fill();
+  ctx.lineWidth = s*0.17;
+  const f = [[-0.24,-0.62],[-0.08,-0.72],[0.08,-0.7],[0.23,-0.58]];
+  ctx.beginPath(); f.forEach(([fx,fy],i)=>{ const bx = (-0.24 + i*0.16)*s; ctx.moveTo(bx, 0); ctx.lineTo(fx*s, fy*s); }); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-0.28*s, 0.2*s); ctx.lineTo(-0.58*s, -0.08*s); ctx.stroke();
+  ctx.restore();
+}
+// 足の マーク（あしうら＋ゆび）
+function footGlyph(x, y, s, flip){
+  ctx.save(); ctx.translate(x, y); ctx.scale(flip ? -1 : 1, 1);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath(); ctx.ellipse(0.02*s, 0.16*s, s*0.27, s*0.46, -0.12, 0, Math.PI*2); ctx.fill();
+  const toes = [[-0.2,-0.42,0.12],[-0.02,-0.5,0.1],[0.13,-0.47,0.085],[0.25,-0.4,0.075],[0.33,-0.3,0.065]];
+  toes.forEach(([tx,ty,tr])=>{ ctx.beginPath(); ctx.arc(tx*s, ty*s, tr*s, 0, Math.PI*2); ctx.fill(); });
+  ctx.restore();
+}
+function drawTarget(pl, task, t, now){
+  const color = partColor(pl, t.part);
+  let s = 1, a = 1;
+  if(task.state==='in'){ const q=Math.min(1,task.age/0.28); s = 1 + 2.4*Math.pow(q-1,3) + 1.4*Math.pow(q-1,2); }
+  if(task.state==='out'){ const q=Math.min(1,task.outT/0.4); s = task.ok ? 1 + q*0.3 : 1 - q*0.4; a = 1-q; }
+  const pulse = 1 + Math.sin(now/260 + t.x*0.01)*0.03;
+  const r = t.r * Math.max(0.01, s) * pulse;
+  const lw = Math.max(4, t.r*0.1);
+  ctx.save(); ctx.globalAlpha = a;
+  if(t.lit > 0){ const g = glowSprite(color), gs = r*2.6; ctx.globalAlpha = a*t.lit; ctx.drawImage(g, t.x-gs, t.y-gs, gs*2, gs*2); ctx.globalAlpha = a; }
+  ctx.beginPath(); ctx.arc(t.x, t.y, r + lw*0.9, 0, Math.PI*2);
+  ctx.fillStyle = t.lit > 0.5 ? '#FFF7C2' : 'rgba(255,255,255,0.95)'; ctx.fill();
+  if(t.k==='D'){
+    ctx.setLineDash([lw*1.6, lw*1.1]);
+    ctx.beginPath(); ctx.arc(t.x, t.y, r, 0, Math.PI*2); ctx.fillStyle = color+'55'; ctx.fill();
+    ctx.lineWidth = lw; ctx.strokeStyle = color; ctx.stroke(); ctx.setLineDash([]);
+    canvasLabel('あたま', t.x, t.y, r*0.42, color);
+  }else{
+    ctx.beginPath(); ctx.arc(t.x, t.y, r, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+    const flip = t.s==='L' ? (sdirDraw(pl)>0) : (sdirDraw(pl)<0);
+    if(t.k==='H') handGlyph(t.x, t.y, r*0.82, flip); else footGlyph(t.x, t.y, r*0.8, flip);
+  }
+  // キープの すすみぐあい
+  if(task.keep >= 1 && task.state!=='out'){
+    const q = Math.min(1, task.hold/task.keep);
+    ctx.lineCap='round'; ctx.lineWidth = lw*1.2;
+    ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(t.x, t.y, r + lw*2.6, 0, Math.PI*2); ctx.stroke();
+    if(q>0){ ctx.strokeStyle='#F2B300'; ctx.beginPath(); ctx.arc(t.x, t.y, r + lw*2.6, -Math.PI/2, -Math.PI/2 + Math.PI*2*q); ctx.stroke(); }
+  }
+  // ラベル：上に 場所、下に 部位
+  const fs = Math.max(20, Math.min(MIN*0.045, t.r*0.5));
+  const gap = r + lw*(task.keep>=1 ? 3.6 : 1.6) + fs*0.7;
+  const below = t.y + gap + fs*0.6 < H;   // 下に 入らないときは 上に ならべる
+  const titleBottom = HUDH + MIN*0.09;
+  if(t.k!=='D') canvasLabel(PART_JP[t.part], t.x, below ? t.y + gap : t.y - gap, fs, color);
+  if(t.name){
+    let ny = t.y - gap - (below ? 0 : fs*1.15);
+    if(ny - fs*0.6 < titleBottom && below) ny = t.y + gap + (t.k!=='D' ? fs*1.15 : 0);   // 上に 入らないときは 下へ
+    canvasLabel(t.name, t.x, ny, fs, '#1E2833');
+  }
+  ctx.restore();
+}
+function sdirDraw(pl){ return pl.b.dir || 1; }
+function drawPt(pl, pt, now){
+  if(pt.a <= 0.01) return;
+  const id = pt.id, color = partColor(pl, id), foot = id[1]==='F';
+  const r = foot ? PR()*1.05 : PR();
+  ctx.save();
+  const tr = pt.trail;
+  if(tr.length > 2 && !foot){
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let i=1;i<tr.length;i++){
+      const q = i/tr.length; ctx.globalAlpha = pt.a*q*0.8; ctx.strokeStyle = color; ctx.lineWidth = r*1.0*q;
+      ctx.beginPath(); ctx.moveTo(tr[i-1].x, tr[i-1].y); ctx.lineTo(tr[i].x, tr[i].y); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = pt.a;
+  const g = glowSprite(color), gs = r*3.2*(1 + Math.sin(now/180)*0.06);
+  ctx.drawImage(g, pt.x-gs, pt.y-gs, gs*2, gs*2);
+  if(foot){
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pt.x-r, pt.y-r*0.8, r*2, r*1.6, r*0.5) : ctx.rect(pt.x-r, pt.y-r*0.8, r*2, r*1.6);
+  }else{
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, r, 0, Math.PI*2);
+  }
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fill();
+  ctx.lineWidth = r*0.28; ctx.strokeStyle = color; ctx.stroke();
+  ctx.beginPath(); ctx.arc(pt.x, pt.y, r*0.3, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  const lr = foot ? feetLR() : handsLR();
+  const both = handOn() && footOn();
+  if(id!=='HD' && (lr || both)){
+    const txt = lr ? PART_JP[id] : (foot ? 'あし' : 'て');
+    canvasLabel(txt, pt.x, pt.y + r*1.8, Math.max(18, r*0.62), color);
+  }
+  ctx.restore();
+}
+function draw(now){
+  ctx.fillStyle = '#F3F6F9'; ctx.fillRect(0,0,W,H);
+  if(!DEMO && S.video!=='none' && video.readyState>=2){
+    ctx.save();
+    if(S.mirror){ ctx.translate(W,0); ctx.scale(-1,1); }
+    ctx.drawImage(video, L.ox, L.oy, L.dw, L.dh);
+    ctx.restore();
+    ctx.fillStyle = S.video==='soft' ? 'rgba(243,246,249,0.62)' : 'rgba(243,246,249,0.12)';
+    ctx.fillRect(0,0,W,H);
+  }
+  const lw = Math.max(4, MIN*0.008);
+  if(phase==='register'){
+    for(const lm of poses){
+      const isC = regCand && regCand.lm===lm;
+      const reg = players.find(p=>p.active && p.lm===lm);
+      if(reg) drawSkeleton(lm, colorsFixed ? reg.color : '#12906A', 0.9, lw);
+      else drawSkeleton(lm, isC ? '#12906A' : '#5A6878', isC ? 0.95 : 0.55, lw);
+    }
+    if(regCand && regCand.lm && regCand.lm[0]){
+      const N = toScr(regCand.lm[0]), rr = Math.max(40, MIN*0.08);
+      ctx.save(); ctx.lineWidth = lw*1.6; ctx.lineCap='round';
+      ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(N.x,N.y,rr,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='#12906A'; ctx.beginPath(); ctx.arc(N.x,N.y,rr,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,regCand.t/REG_TIME)); ctx.stroke();
+      ctx.restore();
+    }
+  }else if(S.video==='none' || DEMO){
+    for(const pl of players) if(pl.active && pl.lm) drawSkeleton(pl.lm, '#8A96A3', 0.6, lw);
+  }
+  if(two() && (phase==='play' || phase==='countdown')){
+    ctx.save();
+    players.forEach(pl=>{ const z=zoneOf(pl); ctx.globalAlpha=0.09; ctx.fillStyle=pl.color; ctx.fillRect(z.xa, HUDH, z.xb-z.xa, H-HUDH); });
+    ctx.globalAlpha=0.85; ctx.strokeStyle='#FFFFFF'; ctx.lineWidth=lw; ctx.setLineDash([lw*3, lw*3]); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(W/2, HUDH); ctx.lineTo(W/2, H); ctx.stroke();
+    ctx.restore();
+  }
+  // まと と おだい
+  if(phase==='play' || gameStarted){
+    for(const pl of players){
+      const task = pl.task; if(!task) continue;
+      for(const t of task.tg) drawTarget(pl, task, t, now);
+      if(task.state!=='out'){
+        const z = zoneOf(pl), fs = Math.max(26, Math.min(MIN*0.06, (z.xb-z.xa)*0.05));
+        let title = task.title;
+        if(task.keep >= 2 && task.hold > 0) title += '　あと '+Math.max(1, Math.ceil(task.keep - task.hold))+' びょう';
+        canvasLabel(title, (z.xa+z.xb)/2, HUDH + fs*0.85, fs, '#1E2833', null, (z.xb-z.xa)*0.94);
+      }
+      if(pl.feetMiss > 1.5){
+        const z = zoneOf(pl), fs = Math.max(22, MIN*0.04);
+        canvasLabel('あしが みえないよ。すこし うしろに さがってね', (z.xa+z.xb)/2, H - fs*1.2, fs, '#E03A3A', null, (z.xb-z.xa)*0.94);
+      }
+    }
+  }
+  for(const p of particles){
+    const q = p.life/p.max;
+    if(p.ring){
+      ctx.save(); ctx.globalAlpha = 1-q; ctx.strokeStyle = p.color; ctx.lineWidth = lw*1.4;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r0*(1+q*0.9), 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    }else{
+      ctx.globalAlpha = 1-q; ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size*(1-q*0.5), 0, Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // 手・足・あたま
+  for(const pl of players){
+    if(!pl.active) continue;
+    const fset = S.mode==='balance' && S.foot==='none' ? 'both' : S.foot;
+    if(fset!=='none' && phase!=='register'){ if(fset!=='R') drawPt(pl, pl.pts.LF, now); if(fset!=='L') drawPt(pl, pl.pts.RF, now); }
+    const hset = phase==='register' ? 'both' : S.hand;
+    if(hset!=='none'){ if(hset!=='R') drawPt(pl, pl.pts.LH, now); if(hset!=='L') drawPt(pl, pl.pts.RH, now); }
+    if(pl.task && pl.task.tg.some(t=>t.k==='D')) drawPt(pl, pl.pts.HD, now);
+  }
+  for(const f of floats){
+    const q = f.t/f.max;
+    ctx.save(); ctx.globalAlpha = q<0.75 ? 1 : (1-q)/0.25;
+    ctx.font = '700 '+Math.round(f.size)+'px "BIZ UDPGothic", sans-serif';
+    const hw = ctx.measureText(f.text).width/2 + f.size*0.3;
+    ctx.restore();
+    canvasLabel(f.text, Math.max(hw, Math.min(W - hw, f.x)), Math.max(f.y, HUDH + f.size*0.7), f.size, f.color);
+  }
+}
+
+/* ================= ためし（?demo）：カメラなしで 動きを たしかめる ================= */
+const DEMO_BASE = {0:[0.5,0.22],11:[0.56,0.33],12:[0.44,0.33],13:[0.6,0.45],14:[0.4,0.45],15:[0.61,0.56],16:[0.39,0.56],
+  17:[0.615,0.59],18:[0.385,0.59],19:[0.61,0.6],20:[0.39,0.6],23:[0.53,0.58],24:[0.47,0.58],25:[0.535,0.74],26:[0.465,0.74],
+  27:[0.535,0.89],28:[0.465,0.89],29:[0.535,0.905],30:[0.465,0.905],31:[0.545,0.915],32:[0.455,0.915]};
+let demoT0 = 0;
+function demoPoses(now){
+  if(!demoT0) demoT0 = now;
+  const lm = [];
+  for(let i=0;i<33;i++){ const b = DEMO_BASE[i] || [0.5,0.3]; lm.push({x:b[0], y:b[1], z:0, visibility:0.99}); }
+  if(phase==='register'){ [15,17,19].forEach(i=>{ lm[i].y = 0.12; }); [16,18,20].forEach(i=>{ lm[i].y = 0.12; }); }
+  const pl = players[0];
+  if(phase==='play' && pl && pl.task && pl.task.state==='live' && pl.task.age > 0.8 && !window.__demoNoSolve){
+    const used = new Set();
+    for(const t of pl.task.tg){
+      const id = CAND[t.part].find(x=>!used.has(x)); used.add(id);
+      const n = fromScr(t);
+      const set = ix=>ix.forEach(i=>{ lm[i].x = n.x; lm[i].y = n.y; });
+      if(id==='RH') set([16,18,20]); else if(id==='LH') set([15,17,19]);
+      else if(id==='RF') set(FOOT_LM.R); else if(id==='LF') set(FOOT_LM.L); else if(id==='HD') set([0]);
+    }
+  }
+  return [lm];
+}
+if(DEMO) window.__pg2 = { S, players:()=>players, frameOf, makeTask, phase:()=>phase, handPos, footPos };
+
+/* ================= はじめの表示 ================= */
+renderAll();
+let helpSeen = false;
+try{ helpSeen = localStorage.getItem(HELP_KEY)==='1'; }catch(e){}
+if(!helpSeen && !DEMO) $('helpModal').hidden = false;
+})();
+</script>
+</body>
+</html>
