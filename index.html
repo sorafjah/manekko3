@@ -207,7 +207,7 @@ ruby rt{font-size:.5em;font-weight:400}
       </ol>
       <p class="t"><b>まとの <ruby>場所<rt>ばしょ</rt></ruby>について</b><br>
       <ruby>最初<rt>さいしょ</rt></ruby>に、うでの <ruby>長<rt>なが</rt></ruby>さ・<ruby>足<rt>あし</rt></ruby>の <ruby>長<rt>なが</rt></ruby>さ・<ruby>肩<rt>かた</rt></ruby>はばを はかります。<ruby>手<rt>て</rt></ruby>の まとは <ruby>肩<rt>かた</rt></ruby>から うでが とどく <ruby>円<rt>えん</rt></ruby>の <ruby>中<rt>なか</rt></ruby>に、<ruby>足<rt>あし</rt></ruby>の まとは こしから <ruby>足<rt>あし</rt></ruby>が とどく ところに <ruby>出<rt>で</rt></ruby>ます。
-      <ruby>両足<rt>りょうあし</rt></ruby>を いっしょに あげる おだいは <ruby>出<rt>で</rt></ruby>ません（かたほうは ゆかに つきます）。<ruby>足<rt>あし</rt></ruby>を あげている ときは、<ruby>手<rt>て</rt></ruby>の まとは ひざや ゆかに <ruby>出<rt>で</rt></ruby>ません。<br>
+      <ruby>両足<rt>りょうあし</rt></ruby>を いっしょに あげる おだいは <ruby>出<rt>で</rt></ruby>ません（かたほうは ゆかに つきます）。<ruby>足<rt>あし</rt></ruby>を つかう ときは、ふみだしたり、<ruby>画面<rt>がめん</rt></ruby>の やじるしの ほうへ あるいて いどうする おだいも <ruby>出<rt>で</rt></ruby>ます。<ruby>足<rt>あし</rt></ruby>を あげている ときは、<ruby>手<rt>て</rt></ruby>の まとは ひざや ゆかに <ruby>出<rt>で</rt></ruby>ません。<br>
       カメラは まえと うしろの うごきが わからないので、まとは <ruby>上下<rt>じょうげ</rt></ruby>・<ruby>左右<rt>さゆう</rt></ruby>に <ruby>出<rt>で</rt></ruby>ます。</p>
       <label class="chk"><input type="checkbox" id="helpNever"><span><ruby>次<rt>つぎ</rt></ruby>から<ruby>表示<rt>ひょうじ</rt></ruby>しない</span></label>
     </div>
@@ -239,7 +239,7 @@ const HAND_LM = { R:{w:16,i:20,p:18}, L:{w:15,i:19,p:17} };
 const FOOT_LM = { R:[28,30,32], L:[27,29,31] };
 const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,31],[28,32]];
 const PTS = ['RH','LH','RF','LF','HD'];
-const STORE_KEY = 'poseGame2_v2';
+const STORE_KEY = 'poseGame2_v3';
 const HELP_KEY = 'poseGame2_help_v1';
 let DEMO = false;
 try{ DEMO = new URLSearchParams(location.search).has('demo'); }catch(e){}
@@ -247,10 +247,10 @@ try{ DEMO = new URLSearchParams(location.search).has('demo'); }catch(e){}
 /* ================= 設定 ================= */
 const DEF = {
   mode:'touch', players:1, team:'vs', time:30,
-  hand:'both', foot:'none', lr:false, how:'one', keep:2, skip:0, size:'m',
-  reach:'normal', low:true,
-  poseHand:['ue','kata','yoko','yuka'], poseFoot:['sukoshi','takaku'], poseOrder:'seq', poseSquat:true,
-  balFoot:'takaku', balHand:'yoko', balKeep:3,
+  hand:'both', foot:'none', lr:false, how:'one', keepTouch:0, keepPose:2, skip:0, size:'m',
+  reach:'normal', low:true, move:'mix',
+  poseHand:['ue','kata','yoko','yuka'], poseFoot:['sukoshi','takaku','fumidasu','idou'], poseOrder:'seq', poseSquat:true,
+  balFoot:'takaku', balHand:'yoko', balKeep:2,
   colOne:'#1FA85A', colR:'#E5487A', colL:'#1AA6C9', colP1:'#F07A18', colP2:'#7C4DDB',
   camera:'user', mirror:true, video:'full', model:'full', sound:true
 };
@@ -275,9 +275,10 @@ const MODE_NAME = {touch:'タッチ', pose:'ポーズ', balance:'バランス'};
 
 // ポーズの場所
 const HAND_POS = [['ue','うえ'],['naname','ななめうえ'],['yoko','よこ'],['kata','かた'],['atama','あたま'],['koshi','こし'],['hiza','ひざ'],['yuka','ゆか']];
-const FOOT_POS = [['sukoshi','すこし あげる'],['takaku','たかく あげる'],['yokoage','よこに あげる'],['hiraku','よこに ひらく']];
+const FOOT_POS = [['sukoshi','すこし あげる'],['takaku','たかく あげる'],['yokoage','よこに あげる'],['hiraku','よこに ひらく'],['fumidasu','ふみだす'],['idou','いどう（あるく）']];
 const POS_JP = {}; HAND_POS.concat(FOOT_POS).forEach(([k,v])=>POS_JP[k]=v);
 const LIFTED = {sukoshi:true, takaku:true, yokoage:true};
+const MOVING = {fumidasu:true, idou:true};
 const LOW_HAND = {hiza:true, yuka:true};
 const PART_JP = {RH:'みぎて', LH:'ひだりて', H:'て', RF:'みぎあし', LF:'ひだりあし', F:'あし', HD:'あたま'};
 
@@ -319,7 +320,9 @@ const SCHEMA = [
     hint:'あり：'+R_('右','みぎ')+'と '+R_('左','ひだり')+'が べつの '+R_('色','いろ')+'に なるよ。なし：どちらの '+R_('手','て')+'（'+R_('足','あし')+'）で さわっても いいよ。'},
   {key:'how', label:R_('出','だ')+'しかた', type:'seg', quick:true, opts:howOpts, show:howShown,
     hint:'ひとつずつ：'+R_('的','まと')+'が ひとつずつ '+R_('出','で')+'るよ。いっしょ：えらんだ '+R_('手','て')+'・'+R_('足','あし')+'の '+R_('的','まと')+'が いっしょに '+R_('出','で')+'て、ぜんぶ さわると できたに なるよ。'+R_('左右','さゆう')+'おなじ：かがみのように おなじ '+R_('高','たか')+'さ。クロス：'+R_('右手','みぎて')+'で '+R_('左','ひだり')+'がわを さわるよ。'+R_('両足','りょうあし')+'を いっしょに あげる おだいは '+R_('出','で')+'ないよ。'},
-  {key:'keep', label:'キープ', type:'seg', opts:[[0,'すぐ'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]], show:()=>S.mode!=='balance',
+  {key:'keepTouch', label:'キープ', type:'seg', opts:[[0,'すぐ'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]], show:()=>S.mode==='touch',
+    hint:R_('的','まと')+'に さわったまま、この '+R_('時間','じかん')+' がまんすると できたに なるよ。'},
+  {key:'keepPose', label:'キープ', type:'seg', opts:[[0,'すぐ'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]], show:()=>S.mode==='pose',
     hint:R_('的','まと')+'に さわったまま、この '+R_('時間','じかん')+' がまんすると できたに なるよ。'},
   {key:'skip', label:'つぎへ すすむ', type:'seg', opts:[[0,'できるまで まつ'],[20,'20'+R_('秒','びょう')],[10,'10'+R_('秒','びょう')]],
     hint:'できないまま この '+R_('時間','じかん')+'が たつと、つぎの おだいに かわるよ。'+R_('画面','がめん')+'を タップしても かわるよ。'},
@@ -328,6 +331,8 @@ const SCHEMA = [
   {grp:'タッチの せってい', mode:['touch']},
   {key:'reach', label:'とおさ', type:'seg', opts:[['near','ちかい'],['normal','ふつう'],['far','とおい']],
     hint:'うでや '+R_('足','あし')+'を どれだけ のばすかだよ。とおい でも、とどく ところまでしか '+R_('出','で')+'ないよ。'},
+  {key:'move', label:R_('足','あし')+'の うごき', type:'seg', opts:[['stay','その'+R_('場','ば')],['step','ステップ（ふみだす）'],['travel','いどう（あるく）'],['mix','いろいろ']], show:()=>S.foot!=='none',
+    hint:'ステップ：'+R_('足','あし')+'を よこへ おおきく ふみだすよ。いどう：'+R_('画面','がめん')+'の やじるしの ほうへ あるいて、'+R_('足','あし')+'の '+R_('的','まと')+'まで いくよ（'+R_('手','て')+'の '+R_('的','まと')+'は '+R_('体','からだ')+'に ついてくるよ）。'},
   {key:'low', label:'ひくい '+R_('的','まと'), type:'seg', opts:[[false,'なし'],[true,'あり（しゃがむ）']], show:handOn,
     hint:'あり：しゃがんで ゆかの ちかくを さわる '+R_('的','まと')+'も '+R_('出','で')+'るよ。'},
 
@@ -494,7 +499,7 @@ function renderSummary(){
   if(howShown()){ const o = howOpts().find(x=>x[0]===S.how); if(o) p.push(o[1]); }
   if(S.mode==='pose'){ const ex = poseExample().replace(/<br>/g,' ／ '); if(ex) p.push(ex); }
   if(S.mode==='balance') p.push('キープ '+S.balKeep+R_('秒','びょう'));
-  else if(S.keep) p.push('キープ '+S.keep+R_('秒','びょう'));
+  else { const kp = S.mode==='pose' ? S.keepPose : S.keepTouch; if(kp) p.push('キープ '+kp+R_('秒','びょう')); }
   p.push(S.players===2 ? 'ふたり' : 'ひとり');
   p.push(S.time+R_('秒','びょう'));
   $('summary').innerHTML = p.filter(Boolean).join('　・　');
@@ -1067,6 +1072,7 @@ function crossPos(F, s, name){
 function footPos(F, s, name, r){
   const d = sdir(F,s), Lg = F.leg, fx = F.cx + d*0.22*F.sw;
   switch(name){
+    case 'fumidasu': return {x:F.cx + d*0.7*Lg, y:F.floor - 0.03*Lg};
     case 'hiraku':  return {x:fx + d*Math.max(0.24*Lg, 1.9*(r||0)), y:F.floor - 0.03*Lg};
     case 'sukoshi': return {x:fx + d*0.03*Lg, y:F.floor - 0.2*Lg};
     case 'takaku':  return {x:fx + d*0.04*Lg, y:F.floor - 0.45*Lg};
@@ -1132,14 +1138,38 @@ function randFoot(pl, F, s, o){
   return clampZ(pl, footPos(F, s, o.lift ? 'sukoshi' : 'hiraku', r), r);
 }
 
+function pickMove(){ const m = S.move; return m==='mix' ? ['stay','step','travel'][Math.floor(Math.random()*3)] : m; }
+// あるいて いどうする さき：からだから はなれた ゆか。ゾーンの はしに よらない がわを えらぶ
+function travelDest(pl, F, r){
+  const z = zoneOf(pl), m = r*1.6 + F.sw*0.4;
+  const minD = Math.max(F.sw*2.2, MIN*0.22), maxD = Math.max(minD*1.25, Math.min((z.xb-z.xa)*0.4, F.sw*4.5));
+  const Lr = F.cx - minD - (z.xa + m), Rr = (z.xb - m) - (F.cx + minD);
+  const opts = []; if(Lr>=0) opts.push(-1); if(Rr>=0) opts.push(1);
+  if(!opts.length) return null;
+  const sgn = opts.length===2 ? (Math.random() < Lr/((Lr+Rr)||1) ? -1 : 1) : opts[0];
+  const room = (sgn<0 ? Lr : Rr) + minD;
+  return { x: F.cx + sgn*rnd(minD, Math.min(maxD, room)), sgn };
+}
 function mkT(slot, p, r, name){ return { part:slot.p, k:slot.k, s:slot.s, x:p.x, y:p.y, r, name:name||'', cov:false, lit:0 }; }
 
 function touchTargets(pl, F, slots, how, r){
   const hands = slots.filter(o=>o.k==='H'), feet = slots.filter(o=>o.k==='F');
   const out = [], avoid = [];
   const push = t=>{ out.push(t); avoid.push(t); };
-  let lifted = false;
-  if(feet.length===2 && how==='same'){
+  let lifted = false, moved = false;
+  const Lg = F.leg;
+  let mv = feet.length ? pickMove() : 'stay', dest = null;
+  if(mv==='travel'){ dest = travelDest(pl, F, r); if(!dest) mv = 'step'; }
+  if(mv==='travel'){
+    feet.forEach(o=>push(mkT(o, clampZ(pl, {x:dest.x + (feet.length===2 ? sdir(F,o.s)*Math.max(0.2*F.sw, r*1.05) : 0), y:F.floor - rnd(0,0.03)*Lg}, r), r)));
+    out.travel = true; out.arrow = dest.sgn<0 ? '←' : '→'; moved = true;
+  }else if(mv==='step'){
+    const wide = o=> clampZ(pl, {x:F.cx + sdir(F,o.s)*rnd(0.5,0.85)*Lg, y:F.floor - rnd(0,0.03)*Lg}, r);
+    if(feet.length===2 && how==='same'){ const p = wide(feet[0]); push(mkT(feet[0], p, r)); push(mkT(feet[1], clampZ(pl, mirrorP(F,p), r), r)); }
+    else if(feet.length===2){ const o = feet[Math.random()<0.5 ? 0 : 1]; push(mkT(o, wide(o), r)); }
+    else feet.forEach(o=>push(mkT(o, wide(o), r)));
+    out.step = true; moved = true;
+  }else if(feet.length===2 && how==='same'){
     const p = randFoot(pl, F, feet[0].s, {lift:false, r, avoid});
     push(mkT(feet[0], p, r)); push(mkT(feet[1], clampZ(pl, mirrorP(F,p), r), r));
   }else if(feet.length){
@@ -1147,7 +1177,7 @@ function touchTargets(pl, F, slots, how, r){
     const li = feet.length===2 ? (Math.random()<0.5 ? 0 : 1) : (Math.random()<0.75 ? 0 : -1);
     feet.forEach((o,i)=>{ const lift = i===li; if(lift) lifted = true; push(mkT(o, randFoot(pl, F, o.s, {lift, r, avoid}), r)); });
   }
-  const low = S.low && !lifted;
+  const low = S.low && !(lifted || moved);
   if(hands.length===2 && how==='same'){
     const p = randHand(pl, F, hands[0].s, {r, avoid, low});
     push(mkT(hands[0], p, r));
@@ -1180,10 +1210,15 @@ function poseTargets(pl, F, slots, how, r){
   const HN = S.poseHand.length ? S.poseHand : ['ue'], FN = S.poseFoot.length ? S.poseFoot : ['sukoshi'];
   const out = [];
   let fname = feet.length ? pickPos(pl, FN, 'fi') : null;
-  const lifted = !!(fname && LIFTED[fname]);
+  let dest = null;
+  if(fname==='idou'){ dest = travelDest(pl, F, r); if(!dest) fname = 'fumidasu'; }
+  const lifted = !!(fname && (LIFTED[fname] || MOVING[fname]));   // 足を あげる・うごく ときは 手を ひくくしない
   const safeH = n=>{ if(!(lifted && LOW_HAND[n])) return n; return HN.find(x=>!LOW_HAND[x]) || 'koshi'; };
-  if(feet.length===2 && lifted){
-    // 両足のときも、あげるのは かたほうずつ（こうたい）
+  if(fname==='idou'){
+    feet.forEach(o=>out.push(mkT(o, clampZ(pl, {x:dest.x + (feet.length===2 ? sdir(F,o.s)*Math.max(0.2*F.sw, r*1.05) : 0), y:F.floor - 0.02*F.leg}, r), r, POS_JP.idou)));
+    out.travel = true; out.arrow = dest.sgn<0 ? '←' : '→';
+  }else if(feet.length===2 && (LIFTED[fname] || fname==='fumidasu')){
+    // 両足のときも、あげる・ふみだすのは かたほうずつ（こうたい）
     pl.fs = pl.fs==='R' ? 'L' : 'R';
     const o = feet.find(x=>x.s===pl.fs) || feet[0];
     out.push(mkT(o, clampZ(pl, footPos(F, o.s, fname, r), r), r, POS_JP[fname]));
@@ -1212,7 +1247,7 @@ function poseTargets(pl, F, slots, how, r){
 function makeTask(pl, now){
   if(!pl.b.ok) return null;
   const F = frameOf(pl, now), r = targR(F);
-  let tg = [], keep = S.keep, kind = S.mode, title = '';
+  let tg = [], keep = S.mode==='pose' ? S.keepPose : S.keepTouch, kind = S.mode, title = '';
   if(S.mode==='balance'){
     const fixed = S.foot==='R' ? 'R' : S.foot==='L' ? 'L' : null;
     if(!fixed) pl.bs = pl.bs==='R' ? 'L' : 'R';
@@ -1235,7 +1270,7 @@ function makeTask(pl, now){
     if(how==='one') slots = [slots[pl.rot++ % slots.length]];
     if(S.mode==='pose' && S.poseSquat && (++pl.sq % 4)===0){
       tg.push({part:'HD', k:'D', s:'R', x:F.cx, y:0, r:r*1.15, name:'', cov:false, lit:0});
-      const p = clampZ(pl, {x:F.cx, y:F.noseY + 0.33*F.leg}, r*1.15); tg[0].x = p.x; tg[0].y = p.y;
+      const p = clampZ(pl, {x:F.cx, y:F.noseY + 0.52*F.leg}, r*1.15); tg[0].x = p.x; tg[0].y = p.y;
       title = 'しゃがむ';
     }else if(S.mode==='touch'){
       tg = touchTargets(pl, F, slots, how, r);
@@ -1244,10 +1279,14 @@ function makeTask(pl, now){
     }
     if(!title) title = taskTitle(tg, how);
   }
-  return { tg, keep, kind, title, hold:0, age:0, state:'in', outT:0, cx0:F.cx, sw0:F.sw, away:0, lastSec:0, ok:false };
+  if(tg.travel){ tg.forEach(t=>{ if(t.k!=='F'){ t.rel = true; t.dx = t.x - F.cx; } }); }   // 手の まとは 体に ついていく
+  return { tg, travel:!!tg.travel, keep, kind, title, hold:0, age:0, state:'in', outT:0, cx0:F.cx, sw0:F.sw, away:0, lastSec:0, ok:false };
 }
 function taskTitle(tg, how){
-  if(S.mode==='touch') return tg.length===1 ? PART_JP[tg[0].part]+'で タッチ' : 'ぜんぶ いっしょに タッチ';
+  if(S.mode==='touch'){
+    const who = tg.length===1 ? ({H:'かたて', F:'かたあし'}[tg[0].part] || PART_JP[tg[0].part])+'で ' : 'ぜんぶ いっしょに ';
+    return who + (tg.travel ? 'あるいて タッチ '+tg.arrow : tg.step ? 'ふみだして タッチ' : 'タッチ');
+  }
   // 同じ場所の 両手は「りょうて」に まとめる
   const hs = tg.filter(t=>t.k==='H'), fs = tg.filter(t=>t.k==='F');
   const parts = [];
@@ -1255,7 +1294,7 @@ function taskTitle(tg, how){
   else hs.forEach(t=>parts.push(PART_JP[t.part]+' '+t.name));
   if(fs.length===2 && fs[0].name===fs[1].name) parts.push('りょうあし '+fs[0].name);
   else fs.forEach(t=>parts.push(PART_JP[t.part]+' '+t.name));
-  return parts.join(' ＋ ');
+  return parts.join(' ＋ ') + (tg.arrow ? ' '+tg.arrow : '');
 }
 
 /* ================= おだいの はんてい ================= */
@@ -1319,9 +1358,10 @@ function updateGame(dt, now){
     if(task.state!=='live') continue;
 
     // 人が 大きく うごいたら、おだいを つくりなおす
-    if(Math.abs(pl.b.cx - task.cx0) > task.sw0*1.3) task.away += dt; else task.away = 0;
+    if(!task.travel && Math.abs(pl.b.cx - task.cx0) > task.sw0*1.3) task.away += dt; else task.away = 0;
     if(task.away > 1.0){ pl.task = null; pl.spawnT = 0.1; continue; }
 
+    if(task.travel) for(const t of task.tg){ if(t.rel) t.x = clampZ(pl, {x:pl.b.cx + t.dx, y:t.y}, t.r).x; }
     const all = checkTask(pl, task);
     task.tg.forEach(t=>{ t.lit = t.cov ? Math.min(1, t.lit + dt*8) : Math.max(0, t.lit - dt*5); });
     if(!all) wrongHint(pl, task);
