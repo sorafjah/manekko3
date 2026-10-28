@@ -51,6 +51,16 @@ ruby rt{font-size:.5em;font-weight:400}
 .go{align-self:center;min-height:88px;min-width:min(420px,100%);padding:10px 40px;border:none;border-radius:20px;background:var(--main);
   color:var(--main-ink);font-size:clamp(30px,4.6vw,42px);font-weight:700;letter-spacing:.08em;box-shadow:0 6px 0 #0C6E50}
 .go:active{transform:translateY(4px);box-shadow:0 2px 0 #0C6E50}
+.sensei{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:10px 14px;margin-bottom:14px}
+.sensei .sh{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;font-size:19px;line-height:1.9}
+.sensei .sh span{color:var(--sub);font-size:16px}
+.sensei .sh .btn{min-height:52px;min-width:0;font-size:20px;padding:4px 18px}
+.sensei .ths{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.sensei .th{display:flex;flex-direction:column;align-items:center;gap:6px}
+.sensei canvas{width:96px;height:120px;border-radius:10px;background:var(--off)}
+.sensei .del{min-height:40px;min-width:72px;border:2px solid var(--line);background:#fff;border-radius:10px;font-size:16px}
+.sensei .hint{margin:6px 0 0}
+.stop.shot{background:var(--main);color:#fff;font-size:24px;min-width:150px}
 .note{margin-top:14px;font-size:14px;color:var(--sub);text-align:center;line-height:1.9}
 
 /* モーダル */
@@ -152,6 +162,7 @@ ruby rt{font-size:.5em;font-weight:400}
   <p class="lead">ゲームを<ruby>選<rt>えら</rt></ruby>んで「せってい」を<ruby>押<rt>お</rt></ruby>すと、それぞれのゲームを<ruby>細<rt>こま</rt></ruby>かく<ruby>調整<rt>ちょうせい</rt></ruby>できます。</p>
   <div class="modes" id="modes"></div>
   <p class="summary" id="summary"></p>
+  <div class="sensei" id="senseiBox" hidden></div>
   <button class="go" id="btnGo">はじめる</button>
   <p class="note">プロジェクターに うつして、<ruby>体<rt>からだ</rt></ruby>ぜんたいが <ruby>足<rt>あし</rt></ruby>もとまで うつるように はなれてね（2.5〜3メートルくらい）。</p>
 </section>
@@ -162,6 +173,7 @@ ruby rt{font-size:.5em;font-weight:400}
   <canvas id="cv"></canvas>
   <div class="hud">
     <button class="stop" id="btnStop">やめる</button>
+    <button class="stop shot" id="btnShot" hidden>とる</button>
     <div class="pill" id="hudScore" hidden>できた 0</div>
     <div class="grow"></div>
     <div class="pill" id="hudTime" hidden>のこり 30秒</div>
@@ -209,6 +221,11 @@ ruby rt{font-size:.5em;font-weight:400}
       <ruby>最初<rt>さいしょ</rt></ruby>に、うでの <ruby>長<rt>なが</rt></ruby>さ・<ruby>足<rt>あし</rt></ruby>の <ruby>長<rt>なが</rt></ruby>さ・<ruby>肩<rt>かた</rt></ruby>はばを はかります。<ruby>手<rt>て</rt></ruby>の まとは <ruby>肩<rt>かた</rt></ruby>から うでが とどく <ruby>円<rt>えん</rt></ruby>の <ruby>中<rt>なか</rt></ruby>に、<ruby>足<rt>あし</rt></ruby>の まとは こしから <ruby>足<rt>あし</rt></ruby>が とどく ところに <ruby>出<rt>で</rt></ruby>ます。
       <ruby>両足<rt>りょうあし</rt></ruby>を いっしょに あげる おだいは <ruby>出<rt>で</rt></ruby>ません（かたほうは ゆかに つきます）。<ruby>足<rt>あし</rt></ruby>を つかう ときは、ふみだしたり、<ruby>画面<rt>がめん</rt></ruby>の やじるしの ほうへ あるいて いどうする おだいも <ruby>出<rt>で</rt></ruby>ます。<ruby>足<rt>あし</rt></ruby>を あげている ときは、<ruby>手<rt>て</rt></ruby>の まとは ひざや ゆかに <ruby>出<rt>で</rt></ruby>ません。<br>
       カメラは まえと うしろの うごきが わからないので、まとは <ruby>上下<rt>じょうげ</rt></ruby>・<ruby>左右<rt>さゆう</rt></ruby>に <ruby>出<rt>で</rt></ruby>ます。</p>
+      <p class="t"><b>あそびの しゅるい</b><br>
+      <ruby>先生<rt>せんせい</rt></ruby>ポーズ：スタート<ruby>画面<rt>がめん</rt></ruby>の「ポーズを とる」を おすと、5びょう あとに カメラの まえの <ruby>人<rt>ひと</rt></ruby>の ポーズを とるよ。その ポーズを まねっこするよ。<br>
+      かべよけ：ちかづいてくる かべの あなに ポーズを あわせて くぐるよ。<br>
+      リズム<ruby>体操<rt>たいそう</rt></ruby>：「ピッ」の おとに あわせて、2はくごとに ポーズを かえるよ。<br>
+      <ruby>筋<rt>きん</rt></ruby>トレ：スクワットや ももあげを、<ruby>回数<rt>かいすう</rt></ruby>と セットを きめて かぞえるよ。</p>
       <label class="chk"><input type="checkbox" id="helpNever"><span><ruby>次<rt>つぎ</rt></ruby>から<ruby>表示<rt>ひょうじ</rt></ruby>しない</span></label>
     </div>
   </div>
@@ -252,16 +269,21 @@ const DEF = {
   poseHand:['ue','kata','yoko','yuka'], poseFoot:['sukoshi','takaku','fumidasu','idou'], poseOrder:'seq', poseSquat:true,
   balFoot:'takaku', balHand:'yoko', balKeep:2,
   colOne:'#1FA85A', colR:'#E5487A', colL:'#1AA6C9', colP1:'#F07A18', colP2:'#7C4DDB',
+  senseiOrder:'seq', senseiKeep:2,
+  kabeSpeed:'normal', kabeSrc:'auto', kabeSquat:true,
+  rhyTempo:'normal', rhySeq:['ue','kata','yoko','koshi'],
+  kinMenu:['wsq','momo','banzai'], kinReps:10, kinSets:2, kinKeep:0, kinDepth:'normal', kinRest:15, voice:true,
   camera:'user', mirror:true, video:'full', model:'full', sound:true
 };
+const MODE_IDS = ['touch','pose','balance','sensei','kabe','rhythm','kintore'];
 let S = Object.assign({}, DEF);
 try{
   const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
   if(s && typeof s === 'object') S = Object.assign({}, DEF, s);
 }catch(e){}
-['poseHand','poseFoot'].forEach(k=>{ if(!Array.isArray(S[k])) S[k] = DEF[k].slice(); });
-try{ const q = new URLSearchParams(location.search).get('mode'); if(q && ['touch','pose','balance'].includes(q)) S.mode = q; }catch(e){}
-if(!['touch','pose','balance'].includes(S.mode)) S.mode = 'touch';
+['poseHand','poseFoot','rhySeq','kinMenu'].forEach(k=>{ if(!Array.isArray(S[k])) S[k] = DEF[k].slice(); });
+try{ const q = new URLSearchParams(location.search).get('mode'); if(q && MODE_IDS.includes(q)) S.mode = q; }catch(e){}
+if(!MODE_IDS.includes(S.mode)) S.mode = 'touch';
 function saveS(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
 
 const R_ = (k,r)=>'<ruby>'+k+'<rt>'+r+'</rt></ruby>';
@@ -269,9 +291,19 @@ const R_ = (k,r)=>'<ruby>'+k+'<rt>'+r+'</rt></ruby>';
 const MODES = [
   {id:'touch', name:'タッチ', desc:'あちこちに '+R_('出','で')+'る '+R_('的','まと')+'に '+R_('手','て')+'や '+R_('足','あし')+'で タッチ'},
   {id:'pose', name:'ポーズ', desc:'うえ・かた・よこ・ゆか… きまった '+R_('場所','ばしょ')+'を じゅんばんに'},
-  {id:'balance', name:'バランス', desc:R_('足','あし')+'を あげて、'+R_('的','まと')+'に ふれたまま キープ'}
+  {id:'balance', name:'バランス', desc:R_('足','あし')+'を あげて、'+R_('的','まと')+'に ふれたまま キープ'},
+  {id:'sensei', name:R_('先生','せんせい')+'ポーズ', desc:R_('先生','せんせい')+'が とった ポーズを まねっこ'},
+  {id:'kabe', name:'かべよけ', desc:'ちかづく かべの あなに ポーズを あわせる'},
+  {id:'rhythm', name:'リズム'+R_('体操','たいそう'), desc:'テンポに あわせて ポーズを かえる'},
+  {id:'kintore', name:R_('筋','きん')+'トレ', desc:'スクワットや ももあげを かぞえる'}
 ];
-const MODE_NAME = {touch:'タッチ', pose:'ポーズ', balance:'バランス'};
+const MODE_NAME = {touch:'タッチ', pose:'ポーズ', balance:'バランス', sensei:R_('先生','せんせい')+'ポーズ', kabe:'かべよけ', rhythm:'リズム'+R_('体操','たいそう'), kintore:R_('筋','きん')+'トレ'};
+const KIN = [['wsq','ワイドスクワット'],['sq','スクワット'],['momo','ももあげ'],['yokoage','よこあしあげ'],['banzai','バンザイ'],['lunge','サイドランジ']];
+const KIN_JP = {}; KIN.forEach(([k,v])=>KIN_JP[k]=v);
+const kinMenu = ()=> S.kinMenu.length ? S.kinMenu : ['sq'];
+const KABE_DUR = {slow:6, normal:4.5, fast:3};
+const RHY_BEAT = {slow:1.2, normal:0.9, fast:0.7};
+const SPEED_JP = {slow:'ゆっくり', normal:'ふつう', fast:'はやい'};
 
 // ポーズの場所
 const HAND_POS = [['ue','うえ'],['naname','ななめうえ'],['yoko','よこ'],['kata','かた'],['atama','あたま'],['koshi','こし'],['hiza','ひざ'],['yuka','ゆか']];
@@ -285,15 +317,15 @@ const PART_JP = {RH:'みぎて', LH:'ひだりて', H:'て', RF:'みぎあし', 
 const COLORS = [['#F07A18','オレンジ'],['#E03A3A','あか'],['#E5487A','ピンク'],['#D99A00','きいろ'],['#1FA85A','みどり'],['#1AA6C9','みずいろ'],['#2C6BDF','あお'],['#7C4DDB','むらさき']];
 
 const handOn = ()=> S.hand!=='none';
-const footOn = ()=> S.foot!=='none' || S.mode==='balance';
-const lrShown = ()=> S.hand==='both' || S.foot==='both' || (S.mode==='balance' && S.foot==='none');
+const footOn = ()=> S.foot!=='none' || S.mode==='balance' || S.mode==='kintore';
+const lrShown = ()=> S.hand==='both' || S.foot==='both' || (S.mode==='balance' && S.foot==='none') || S.mode==='kintore';
 const handsLR = ()=> S.hand==='R' || S.hand==='L' || (S.hand==='both' && S.lr);
 const feetLR = ()=> S.foot==='R' || S.foot==='L' || ((S.foot==='both' || (S.mode==='balance' && S.foot==='none')) && S.lr);
 function partCount(){
   const h = {none:0,R:1,L:1,one:1,both:2}[S.hand]||0, f = {none:0,R:1,L:1,one:1,both:2}[S.foot]||0;
   return h+f;
 }
-const howShown = ()=> S.mode!=='balance' && partCount()>1;
+const howShown = ()=> (S.mode==='touch' || S.mode==='pose') && partCount()>1;
 function howOpts(){
   const o = [['one','ひとつずつ'],['same','いっしょ・'+R_('左右','さゆう')+'おなじ'],['diff','いっしょ・'+R_('左右','さゆう')+'ちがう']];
   if(S.hand==='both' && S.lr) o.push(['cross','クロス（'+R_('反対','はんたい')+'がわ）']);
@@ -310,10 +342,10 @@ const SCHEMA = [
   {key:'players', label:'にんずう', type:'seg', quick:true, opts:[[1,'ひとり'],[2,'ふたり']]},
   {key:'team', label:'ふたりのとき', type:'seg', opts:[['vs','きょうそう'],['coop','きょうりょく']], show:()=>S.players===2,
     hint:'ふたりのときは、'+R_('画面','がめん')+'の '+R_('左','ひだり')+'と '+R_('右','みぎ')+'に わかれて、それぞれの '+R_('体','からだ')+'に あわせた '+R_('的','まと')+'が '+R_('出','で')+'るよ。'},
-  {key:'time', label:R_('時間','じかん'), type:'step', min:10, max:600, step:10, unit:'秒'},
-  {key:'hand', label:R_('使','つか')+'う '+R_('手','て'), type:'seg', quick:true,
+  {key:'time', label:R_('時間','じかん'), type:'step', min:10, max:600, step:10, unit:'秒', show:()=>S.mode!=='kintore'},
+  {key:'hand', label:R_('使','つか')+'う '+R_('手','て'), type:'seg', quick:true, show:()=>S.mode!=='kintore',
     opts:[['none','なし'],['R',R_('右手','みぎて')],['L',R_('左手','ひだりて')],['one','かたて（どちらでも）'],['both',R_('両手','りょうて')]]},
-  {key:'foot', label:R_('使','つか')+'う '+R_('足','あし'), type:'seg', quick:true,
+  {key:'foot', label:R_('使','つか')+'う '+R_('足','あし'), type:'seg', quick:true, show:()=>S.mode!=='kintore',
     opts:[['none','なし'],['R',R_('右足','みぎあし')],['L',R_('左足','ひだりあし')],['one','かたあし（どちらでも）'],['both',R_('両足','りょうあし')]],
     hint:()=> S.mode==='balance' && S.foot!=='R' && S.foot!=='L' ? 'バランスでは、'+R_('右足','みぎあし')+'と '+R_('左足','ひだりあし')+'を こうたいで あげるよ。' : ''},
   {key:'lr', label:R_('左右','さゆう')+'の '+R_('区別','くべつ'), type:'seg', quick:true, opts:[[true,'あり'],[false,'なし']], show:lrShown,
@@ -324,7 +356,7 @@ const SCHEMA = [
     hint:R_('的','まと')+'に さわったまま、この '+R_('時間','じかん')+' がまんすると できたに なるよ。'},
   {key:'keepPose', label:'キープ', type:'seg', opts:[[0,'すぐ'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]], show:()=>S.mode==='pose',
     hint:R_('的','まと')+'に さわったまま、この '+R_('時間','じかん')+' がまんすると できたに なるよ。'},
-  {key:'skip', label:'つぎへ すすむ', type:'seg', opts:[[0,'できるまで まつ'],[20,'20'+R_('秒','びょう')],[10,'10'+R_('秒','びょう')]],
+  {key:'skip', label:'つぎへ すすむ', type:'seg', opts:[[0,'できるまで まつ'],[20,'20'+R_('秒','びょう')],[10,'10'+R_('秒','びょう')]], show:()=>['touch','pose','balance','sensei'].includes(S.mode),
     hint:'できないまま この '+R_('時間','じかん')+'が たつと、つぎの おだいに かわるよ。'+R_('画面','がめん')+'を タップしても かわるよ。'},
   {key:'size', label:R_('的','まと')+'の '+R_('大','おお')+'きさ', type:'seg', opts:[['s',R_('小','しょう')],['m',R_('中','ちゅう')],['l',R_('大','だい')]]},
 
@@ -349,6 +381,36 @@ const SCHEMA = [
   {key:'balFoot', label:R_('足','あし')+'の '+R_('高','たか')+'さ', type:'seg', opts:[['sukoshi','すこし'],['takaku','たかく']]},
   {key:'balHand', label:R_('手','て')+'の ポーズ', type:'seg', opts:[['none','なし'],['yoko','よこ（ひこうき）'],['ue','うえ'],['koshi','こし']], show:handOn},
   {key:'balKeep', label:'キープ', type:'seg', opts:[[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')],[10,'10'+R_('秒','びょう')]]},
+
+  {grp:R_('先生','せんせい')+'ポーズの せってい', mode:['sensei']},
+  {type:'info', label:'ポーズ', html:()=>'いま '+senseiPoses.length+'こ。スタート'+R_('画面','がめん')+'の「ポーズを とる」で ふやせるよ（12こまで）。'},
+  {key:'senseiOrder', label:R_('出','で')+'る じゅんばん', type:'seg', opts:[['seq','とった じゅんばん'],['rand','ばらばら']]},
+  {key:'senseiKeep', label:'キープ', type:'seg', opts:[[0,'すぐ'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]],
+    hint:R_('先生','せんせい')+'の '+R_('手','て')+'・'+R_('足','あし')+'の '+R_('場所','ばしょ')+'に '+R_('的','まと')+'が '+R_('出','で')+'るよ。'+R_('的','まと')+'は その '+R_('人','ひと')+'の うでや '+R_('足','あし')+'の '+R_('長','なが')+'さに あわせて かわるよ。'},
+
+  {grp:'かべよけの せってい', mode:['kabe']},
+  {key:'kabeSpeed', label:'かべの はやさ', type:'seg', opts:[['slow','ゆっくり'],['normal','ふつう'],['fast','はやい']],
+    hint:'ゆっくり：6びょう、ふつう：4.5びょう、はやい：3びょうで かべが くるよ。'},
+  {key:'kabeSrc', label:'あなの かたち', type:'seg', opts:[['auto','いろいろ'],['sensei',R_('先生','せんせい')+'ポーズ']],
+    hint:R_('先生','せんせい')+'ポーズ：とった ポーズの かたちの あなが あくよ。'},
+  {key:'kabeSquat', label:'しゃがむ', type:'seg', opts:[[false,'なし'],[true,'ときどき まぜる']], show:()=>S.kabeSrc==='auto'},
+
+  {grp:'リズム'+R_('体操','たいそう')+'の せってい', mode:['rhythm']},
+  {key:'rhyTempo', label:'テンポ', type:'seg', opts:[['slow','ゆっくり'],['normal','ふつう'],['fast','はやい']],
+    hint:'「ピッ・ピッ」の 2はくで ポーズが かわるよ。ゆっくり：2.4びょう、ふつう：1.8びょう、はやい：1.4びょうで 1ポーズ。'},
+  {key:'rhySeq', label:R_('手','て')+'の じゅんばん', type:'multi', opts:HAND_POS.filter(([k])=>!LOW_HAND[k]), show:handOn,
+    hint:'おした じゅんばんに くりかえすよ。'+R_('足','あし')+'を つかう ときは、'+R_('足','あし')+'ぶみ（'+R_('右','みぎ')+'・'+R_('左','ひだり')+' こうたい）も いっしょだよ。'},
+
+  {grp:R_('筋','きん')+'トレの せってい', mode:['kintore']},
+  {key:'kinMenu', label:'メニュー', type:'multi', opts:KIN, hint:'おした じゅんばんに やるよ。'},
+  {key:'kinReps', label:R_('回数','かいすう'), type:'step', min:1, max:50, step:1, unit:'かい',
+    hint:'1セットの '+R_('回数','かいすう')+'だよ。ももあげ・よこあしあげ・サイドランジは '+R_('右','みぎ')+'と '+R_('左','ひだり')+'で 1かいずつ かぞえるよ。'},
+  {key:'kinSets', label:'セット', type:'step', min:1, max:10, step:1, unit:'セット'},
+  {key:'kinKeep', label:'キープ', type:'seg', opts:[[0,'なし'],[1,'1'+R_('秒','びょう')],[2,'2'+R_('秒','びょう')],[3,'3'+R_('秒','びょう')],[5,'5'+R_('秒','びょう')]],
+    hint:'しゃがんだ ところ・'+R_('足','あし')+'や '+R_('手','て')+'を あげた ところで、この '+R_('時間','じかん')+' がまんするよ。'},
+  {key:'kinDepth', label:'しゃがむ ふかさ', type:'seg', opts:[['shallow','あさい'],['normal','ふつう'],['deep','ふかい']]},
+  {key:'kinRest', label:'やすみ', type:'step', min:0, max:120, step:5, unit:'秒', hint:'セットと セットの あいだの やすみだよ。'},
+  {key:'voice', label:'かぞえる こえ', type:'seg', opts:[[true,'あり'],[false,'なし']]},
 
   {grp:R_('色','いろ')},
   {key:'colOne', label:R_('色','いろ'), type:'color', show:()=>S.players===1 && !(handsLR()||feetLR())},
@@ -414,7 +476,7 @@ function renderModes(){
     box.appendChild(b);
   });
 }
-function renderAll(){ renderModes(); renderQuick(); renderSummary(); if(!$('setModal').hidden) renderSettings(); }
+function renderAll(){ renderModes(); renderQuick(); renderSensei(); renderSummary(); if(!$('setModal').hidden) renderSettings(); }
 
 function buildRow(it){
   const row = document.createElement('div'); row.className='row';
@@ -494,12 +556,21 @@ function partsText(){
   return [h,f].filter(Boolean).join('＋');
 }
 function renderSummary(){
+  if(S.mode==='kintore'){
+    const q = ['<b>'+MODE_NAME[S.mode]+'</b>', kinMenu().map(k=>KIN_JP[k]).join(' → '), S.kinReps+'かい × '+S.kinSets+'セット'];
+    if(S.kinKeep) q.push('キープ '+S.kinKeep+R_('秒','びょう'));
+    q.push(S.players===2 ? 'ふたり' : 'ひとり');
+    $('summary').innerHTML = q.join('　・　'); return;
+  }
   const p = ['<b>'+MODE_NAME[S.mode]+'</b>', partsText()];
+  if(S.mode==='sensei') p.push(R_('先生','せんせい')+'ポーズ '+senseiPoses.length+'こ');
+  if(S.mode==='kabe') p.push('はやさ '+SPEED_JP[S.kabeSpeed]);
+  if(S.mode==='rhythm') p.push('テンポ '+SPEED_JP[S.rhyTempo]);
   if(lrShown()) p.push(R_('左右','さゆう')+'の'+R_('区別','くべつ')+(S.lr?'あり':'なし'));
   if(howShown()){ const o = howOpts().find(x=>x[0]===S.how); if(o) p.push(o[1]); }
   if(S.mode==='pose'){ const ex = poseExample().replace(/<br>/g,' ／ '); if(ex) p.push(ex); }
   if(S.mode==='balance') p.push('キープ '+S.balKeep+R_('秒','びょう'));
-  else { const kp = S.mode==='pose' ? S.keepPose : S.keepTouch; if(kp) p.push('キープ '+kp+R_('秒','びょう')); }
+  else { const kp = {pose:S.keepPose, touch:S.keepTouch, sensei:S.senseiKeep}[S.mode]; if(kp) p.push('キープ '+kp+R_('秒','びょう')); }
   p.push(S.players===2 ? 'ふたり' : 'ひとり');
   p.push(S.time+R_('秒','びょう'));
   $('summary').innerHTML = p.filter(Boolean).join('　・　');
@@ -526,6 +597,71 @@ $('helpClose').addEventListener('click', ()=>{
     }catch(e){}
   });
 })();
+
+/* ================= 先生ポーズ（とった ポーズ） ================= */
+const SENSEI_KEY = 'poseGame2_sensei';
+let senseiPoses = [];
+try{ const a = JSON.parse(localStorage.getItem(SENSEI_KEY) || '[]'); if(Array.isArray(a)) senseiPoses = a.filter(q=>q && Array.isArray(q.lm) && q.lm.length===33); }catch(e){}
+function saveSensei(){ try{ localStorage.setItem(SENSEI_KEY, JSON.stringify(senseiPoses)); }catch(e){} }
+// 画面と おなじ むきの、たて・よこ おなじ 長さの 座標にする
+function senseiP(pose){
+  const asp = pose.asp || 16/9;
+  return i=>{ const a = pose.lm[i]; return {x:(S.mirror ? 1-a[0] : a[0])*asp, y:a[1], v:a[2]}; };
+}
+function drawThumb(c, pose){
+  const g = c.getContext('2d'), P = senseiP(pose);
+  g.fillStyle = '#E9EDF2'; g.fillRect(0,0,c.width,c.height);
+  const idx = [0,11,12,13,14,15,16,23,24,25,26,27,28];
+  const pts = idx.map(P);
+  const mnx = Math.min(...pts.map(q=>q.x)), mxx = Math.max(...pts.map(q=>q.x)), mny = Math.min(...pts.map(q=>q.y)), mxy = Math.max(...pts.map(q=>q.y));
+  const pad = 22, sc = Math.min((c.width-pad*2)/Math.max(1e-3, mxx-mnx), (c.height-pad*2)/Math.max(1e-3, mxy-mny));
+  const ox = (c.width - (mxx-mnx)*sc)/2, oy = (c.height - (mxy-mny)*sc)/2;
+  const T = i=>{ const q = P(i); return {x:ox + (q.x-mnx)*sc, y:oy + (q.y-mny)*sc}; };
+  g.strokeStyle = '#12906A'; g.lineWidth = 9; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath();
+  for(const [a,b] of BONES){ if(a>28 || b>28) continue; const A=T(a), B=T(b); g.moveTo(A.x,A.y); g.lineTo(B.x,B.y); }
+  g.stroke();
+  const N = T(0); g.beginPath(); g.arc(N.x, N.y, Math.max(8, dist(T(11),T(12))*0.32), 0, Math.PI*2); g.stroke();
+}
+let delAllArm = false;
+function renderSensei(){
+  const box = $('senseiBox');
+  const on = S.mode==='sensei' || (S.mode==='kabe' && S.kabeSrc==='sensei');
+  box.hidden = !on; if(!on) return;
+  box.innerHTML = '';
+  const head = document.createElement('div'); head.className = 'sh';
+  head.innerHTML = '<b>'+R_('先生','せんせい')+'ポーズ</b><span>'+senseiPoses.length+'こ（12こまで）</span>';
+  const rec = document.createElement('button'); rec.className = 'btn main'; rec.textContent = 'ポーズを とる';
+  rec.addEventListener('click', ()=>{ unlockAudio(); unlockSpeech(); startRecord(); });
+  head.appendChild(rec);
+  if(senseiPoses.length){
+    const da = document.createElement('button'); da.className = 'btn'; da.textContent = delAllArm ? 'ほんとうに ぜんぶ けす？' : 'ぜんぶ けす';
+    da.addEventListener('click', ()=>{ if(!delAllArm){ delAllArm = true; renderSensei(); setTimeout(()=>{ delAllArm=false; renderSensei(); }, 4000); return; } delAllArm = false; senseiPoses = []; saveSensei(); renderAll(); });
+    head.appendChild(da);
+  }
+  box.appendChild(head);
+  const list = document.createElement('div'); list.className = 'ths';
+  if(!senseiPoses.length) list.innerHTML = '<p class="hint">まだ ないよ。「ポーズを とる」を おすと、5びょう あとに カメラの まえの '+R_('人','ひと')+'の ポーズを とるよ。</p>';
+  senseiPoses.forEach((ps,i)=>{
+    const d = document.createElement('div'); d.className = 'th';
+    const lab = document.createElement('b'); lab.textContent = (i+1);
+    const c = document.createElement('canvas'); c.width = 192; c.height = 240; drawThumb(c, ps);
+    const del = document.createElement('button'); del.className = 'del'; del.textContent = 'けす';
+    del.addEventListener('click', ()=>{ senseiPoses.splice(i,1); saveSensei(); renderAll(); });
+    d.append(lab, c, del); list.appendChild(d);
+  });
+  box.appendChild(list);
+}
+
+/* ================= こえ（筋トレの かぞえ） ================= */
+let jaVoice = null;
+function loadVoices(){ try{ const v = speechSynthesis.getVoices() || []; jaVoice = v.find(x=>/^ja[-_]JP/i.test(x.lang)) || v.find(x=>/^ja/i.test(x.lang)) || null; }catch(e){} }
+try{ loadVoices(); speechSynthesis.addEventListener('voiceschanged', loadVoices); }catch(e){}
+function unlockSpeech(){ try{ speechSynthesis.speak(new SpeechSynthesisUtterance('')); }catch(e){} }
+function say(t){
+  if(!S.voice || S.mode!=='kintore') return;
+  try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; if(jaVoice) u.voice = jaVoice; u.rate = 1.05; speechSynthesis.speak(u); }catch(e){}
+}
 
 /* ================= 効果音 ================= */
 let actx = null;
@@ -876,6 +1012,7 @@ let particles = [], floats = [];
 let gameStarted = false;
 let raf = 0, lastNow = 0, lastVT = -1, lastTs = 0;
 let msgTimer = 0;
+let rhy = {t:0, beat:-1, cnt:0, flash:0}, kinEndT = 0;
 
 function setMsg(main, sub, opt){
   opt = opt||{};
@@ -890,12 +1027,18 @@ function setMsg(main, sub, opt){
 }
 
 /* ================= 開始・終了 ================= */
-$('btnGo').addEventListener('click', ()=>{ unlockAudio(); startStage(); });
+$('btnGo').addEventListener('click', ()=>{
+  unlockAudio(); unlockSpeech();
+  if(S.mode==='sensei' && !senseiPoses.length){
+    waitShow(R_('先生','せんせい')+'ポーズが まだ ないよ', '「ポーズを とる」を おして、ポーズを とってね。', true); return;
+  }
+  startStage();
+});
 
-async function startStage(){
+async function prepCamera(){
   if(!DEMO){
     if(!window.isSecureContext){
-      waitShow('このページは https で ひらいてね', 'カメラは https のページでしか つかえません。', true); return;
+      waitShow('このページは https で ひらいてね', 'カメラは https のページでしか つかえません。', true); return false;
     }
     waitShow('じゅんび しているよ', 'カメラを じゅんびしているよ');
     try{ await startCamera(); }
@@ -903,7 +1046,7 @@ async function startStage(){
       stopCamera();
       waitShow('カメラが つかえなかったよ',
         'iPadの「'+R_('設定','せってい')+'」→「Safari」→「カメラ」を「'+R_('許可','きょか')+'」にして、もういちど ためしてね。<br>（ほかのアプリでカメラを つかっていないかも たしかめてね）', true);
-      return;
+      return false;
     }
     try{
       $('waitSub').innerHTML = R_('読','よ')+'み'+R_('取','と')+'りの じゅんびを しているよ（はじめては すこし じかんが かかるよ）';
@@ -911,10 +1054,14 @@ async function startStage(){
     }catch(e){
       waitShow(R_('読','よ')+'み'+R_('取','と')+'りの じゅんびが できなかったよ',
         'インターネットに つながっているか たしかめて、もういちど ためしてね。', true);
-      return;
+      return false;
     }
     waitHide();
   }
+  return true;
+}
+async function startStage(){
+  if(!(await prepCamera())) return;
   show(scrStage);
   resize();
   keepAwake(true);
@@ -924,9 +1071,46 @@ async function startStage(){
   lastNow = performance.now();
   cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
+let recCd = 0, recShown = -1, recFlashT = -1e9;
+async function startRecord(){
+  if(!(await prepCamera())) return;
+  show(scrStage); resize(); keepAwake(true);
+  resetPlayers(); particles = []; floats = []; gameStarted = false;
+  phase = 'record'; recCd = 0;
+  hudScore.hidden = false; hudTime.hidden = true; hudScore2.hidden = true; hudGrow2.hidden = true;
+  $('btnShot').hidden = false; $('btnStop').textContent = 'おわる';
+  recHud();
+  setMsg('「とる」を おすと、5びょうで とるよ', R_('先生','せんせい')+'は カメラの まえで、'+R_('足','あし')+'まで うつるように ポーズを してね');
+  lastNow = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+}
+function recHud(){ hudScore.textContent = 'ポーズ '+senseiPoses.length+'こ'; }
+$('btnShot').addEventListener('click', ()=>{ if(phase!=='record' || recCd>0) return; unlockAudio(); recCd = 5; recShown = -1; });
+function updateRecord(dt, now){
+  if(recCd <= 0) return;
+  recCd -= dt;
+  if(recCd > 0){
+    const n = Math.ceil(recCd);
+    if(n!==recShown){ recShown = n; setMsg(String(n), null, {big:true, color:'#2C6BDF', pop:true}); SFX.tick(); }
+    return;
+  }
+  recCd = 0;
+  let best = null, bs = 0;
+  for(const lm of poses){ const b = bodyOf(lm); if(b && b.sw > bs){ bs = b.sw; best = lm; } }
+  const ok = best && [11,12,23,24,15,16].every(i=>best[i] && best[i].visibility > 0.5);
+  if(!ok){ setMsg(R_('体','からだ')+'が ぜんぶ うつらなかったよ', 'もういちど「とる」を おしてね'); SFX.wrong(); return; }
+  const vw = video.videoWidth || 16, vh = video.videoHeight || 9;
+  senseiPoses.push({ lm: best.map(q=>[+q.x.toFixed(4), +q.y.toFixed(4), +(q.visibility||0).toFixed(2)]), asp: vw/vh });
+  if(senseiPoses.length > 12) senseiPoses.shift();
+  saveSensei(); recHud(); SFX.reg(); recFlashT = now;
+  const feet = [27,28].some(i=>best[i] && best[i].visibility > 0.3 && best[i].y < 1);
+  setMsg('とれたよ！ '+senseiPoses.length+'こめ', feet ? 'つづけて とる ときは、もういちど「とる」を おしてね' : R_('足','あし')+'が うつっていなかったよ。'+R_('足','あし')+'を つかう ときは とりなおしてね');
+}
+
 function newGame(){
   remain = S.time;
-  for(const pl of players){ pl.score=0; pl.task=null; pl.spawnT=0.3; pl.rot=0; pl.hi=0; pl.fi=0; pl.sq=0; pl.feetMiss=0; }
+  for(const pl of players){ pl.score=0; pl.task=null; pl.spawnT=0.3; pl.rot=0; pl.hi=0; pl.fi=0; pl.sq=0; pl.feetMiss=0; pl.si=0; pl.rhyN=0;
+    pl.kin = {ei:0, set:1, rep:0, step:0, side:'R', phase:'intro'}; }
+  rhy = {t:0, beat:-1, cnt:0, flash:0}; kinEndT = 0;
   particles = []; floats = [];
   gameStarted = false;
   hudScore.hidden = true; hudTime.hidden = true; hudScore2.hidden = true; hudGrow2.hidden = true;
@@ -977,7 +1161,10 @@ function renderResult(){
     box.appendChild(d);
   };
   const num=$('resNum'), lbl=$('resLbl');
-  const t = 'できた'+R_('数','かず');
+  let t = 'できた'+R_('数','かず');
+  if(S.mode==='kabe') t = 'くぐれた'+R_('数','かず');
+  if(S.mode==='kintore') t = 'できた'+R_('回数','かいすう');
+  if(S.mode==='rhythm' && !two()) t = players[0].rhyN+'かいの うち できた'+R_('数','かず');
   if(!two()){ lbl.innerHTML = t; num.hidden=false; num.textContent = players[0].score; }
   else if(S.team==='coop'){
     lbl.innerHTML = 'ふたりで '+t; num.hidden=false; num.textContent = players[0].score + players[1].score;
@@ -989,11 +1176,12 @@ function renderResult(){
 }
 function goHome(){
   phase='off'; cancelAnimationFrame(raf); raf=0; keepAwake(false);
+  $('btnShot').hidden = true; $('btnStop').textContent = 'やめる';
   setMsg(null); renderAll(); show(scrStart);
 }
-$('btnStop').addEventListener('click', ()=>{ if(gameStarted) endGame(); else goHome(); });
+$('btnStop').addEventListener('click', ()=>{ if(phase==='record'){ goHome(); return; } if(gameStarted) endGame(); else goHome(); });
 $('btnAgain').addEventListener('click', ()=>{
-  unlockAudio();
+  unlockAudio(); unlockSpeech();
   show(scrStage); resize(); keepAwake(true);
   if(players.length!==S.players) resetPlayers();
   newGame();
@@ -1008,12 +1196,21 @@ $('btnHome').addEventListener('click', goHome);
 cv.addEventListener('pointerdown', ()=>{
   if(phase!=='play') return;
   let any = false;
-  for(const pl of players){ if(pl.task && pl.task.state==='live'){ skipTask(pl, true); any = true; } }
+  for(const pl of players){
+    if(pl.task && pl.task.state==='live'){
+      if(pl.task.kind==='kin') onSuccess(pl, pl.task); else skipTask(pl, true);   // 筋トレは「つぎへ すすむ」
+      any = true;
+    }
+  }
   if(any) SFX.skip();
 });
 
 function updateHud(){
   hudTime.textContent = 'のこり ' + Math.max(0, Math.ceil(remain)) + '秒';
+  if(S.mode==='kintore'){
+    const k = players[0] && players[0].kin;
+    hudTime.textContent = !k || k.phase==='done' ? 'おわり' : KIN_JP[kinMenu()[k.ei]]+' '+k.set+'/'+S.kinSets+'セット';
+  }
   if(!two()){
     hudScore.textContent = 'できた ' + (players[0] ? players[0].score : 0);
     hudScore.style.boxShadow = '';
@@ -1244,9 +1441,223 @@ function poseTargets(pl, F, slots, how, r){
   return out;
 }
 
+function mkTask(tg, keep, title, extra, F){
+  return Object.assign({ tg, travel:false, keep, kind:S.mode, title, hold:0, age:0, state:'in', outT:0, cx0:F.cx, sw0:F.sw, away:0, lastSec:0, ok:false }, extra||{});
+}
+function mkHD(pl, F, r, x, y, name){ const p = clampZ(pl, {x, y}, r*1.25); return {part:'HD', k:'D', s:'R', x:p.x, y:p.y, r:r*1.25, name:name||'', cov:false, lit:0}; }
+function handParts(){
+  const h = S.hand;
+  if(h==='none') return [];
+  if(h==='R') return [['RH','R']];
+  if(h==='L') return [['LH','L']];
+  if(h==='one') return [['H', Math.random()<0.5 ? 'R' : 'L']];
+  return [[S.lr?'RH':'H','R'], [S.lr?'LH':'H','L']];
+}
+function footParts(){
+  const f = S.foot;
+  if(f==='none') return [];
+  if(f==='R') return [['RF','R']];
+  if(f==='L') return [['LF','L']];
+  if(f==='one') return [['F', Math.random()<0.5 ? 'R' : 'L']];
+  return [[S.lr?'RF':'F','R'], [S.lr?'LF':'F','L']];
+}
+
+/* ----- 先生ポーズ：先生の 手足の むきを、その子の うで・あしの 長さに あわせて うつす ----- */
+function senseiMap(pl, F, pose){
+  const P = senseiP(pose);
+  const mid = (a,b)=>({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+  const tSm = mid(P(11),P(12)), tHm = mid(P(23),P(24));
+  const tT = Math.max(1e-4, dist(tSm, tHm));
+  const seg = (a,b,c)=> dist(P(a),P(b)) + dist(P(b),P(c));
+  const tArm = Math.max(seg(11,13,15), seg(12,14,16), tT*0.8);
+  const tLeg = Math.max(seg(23,25,27), seg(24,26,28), tT*1.2);
+  const ankY = Math.max(P(27).y, P(28).y);
+  const drop = clamp(tSm.y - (ankY - tLeg - tT), 0, tLeg*0.6);   // しゃがんだ ぶん
+  const ar = F.arm/tArm, lr = F.leg/tLeg, trr = F.T/tT, dropS = drop*lr;
+  const vSm = {x:F.cx, y:F.sy + dropS};
+  const rel = (q, o, k, base)=>({x: base.x + (q.x-o.x)*k, y: base.y + (q.y-o.y)*k});
+  const g = {};
+  g[12] = {x:F.RS.x, y:F.sy + dropS}; g[11] = {x:F.LS.x, y:F.sy + dropS};
+  [[12,14,16,20,18],[11,13,15,19,17]].forEach(([sh,el,wr,ix,px])=>{
+    const ts = P(sh), tw = P(wr), ti = P(ix), tp = P(px);
+    g[el] = rel(P(el), ts, ar, g[sh]); g[wr] = rel(tw, ts, ar, g[sh]);
+    const th = {x: tw.x + ((ti.x+tp.x)/2 - tw.x)*1.25, y: tw.y + ((ti.y+tp.y)/2 - tw.y)*1.25};
+    g['h'+sh] = rel(th, ts, ar, g[sh]);
+  });
+  g[24] = rel(P(24), tSm, trr, vSm); g[23] = rel(P(23), tSm, trr, vSm);
+  [[24,26,28,[28,30,32]],[23,25,27,[27,29,31]]].forEach(([hp,kn,an,fi])=>{
+    const th = P(hp);
+    g[kn] = rel(P(kn), th, lr, g[hp]); g[an] = rel(P(an), th, lr, g[hp]); g[an].y = Math.min(g[an].y, F.floor);
+    const tf = fi.map(P).reduce((a,q)=>({x:a.x+q.x/3, y:a.y+q.y/3}), {x:0,y:0});
+    const f = rel(tf, th, lr, g[hp]); f.y = Math.min(f.y, F.floor); g['f'+hp] = f;
+  });
+  g[0] = rel(P(0), tSm, trr, vSm);
+  g.hr = F.T*0.3;
+  return { g, drop: drop/tLeg };
+}
+function pickSensei(pl){
+  const n = senseiPoses.length; if(!n) return null;
+  if(S.senseiOrder==='rand' || S.mode==='kabe'){
+    let i = Math.floor(Math.random()*n);
+    if(n>1 && i===pl.siL) i = (i+1) % n;
+    pl.siL = i; return senseiPoses[i];
+  }
+  return senseiPoses[(pl.si++) % n];
+}
+function senseiTargets(pl, F, r, pose){
+  const { g, drop } = senseiMap(pl, F, pose);
+  const out = [];
+  let hp = handParts(), fp = footParts();
+  if(!hp.length && !fp.length) hp = [[S.lr?'RH':'H','R'], [S.lr?'LH':'H','L']];
+  hp.forEach(([part,s])=> out.push(mkT({p:part, k:'H', s}, clampZ(pl, s==='R' ? g.h12 : g.h11, r), r, '')));
+  fp.forEach(([part,s])=> out.push(mkT({p:part, k:'F', s}, clampZ(pl, s==='R' ? g.f24 : g.f23, r), r, '')));
+  if(drop > 0.18) out.push(mkHD(pl, F, r, g[0].x, g[0].y, 'しゃがむ'));
+  out.ghost = g;
+  return out;
+}
+
+/* ----- かべよけ：あなの かたち ----- */
+function ghostAuto(F, tg, dropS){
+  const d = F.dir, g = {};
+  g[12] = {x:F.RS.x, y:F.sy + dropS}; g[11] = {x:F.LS.x, y:F.sy + dropS};
+  g[24] = {x:F.cx + d*0.27*F.sw, y:F.hy + dropS}; g[23] = {x:F.cx - d*0.27*F.sw, y:F.hy + dropS};
+  const find = (k, s)=> tg.find(t=>t.k===k && t.s===s);
+  [['R',12,14,16,24,26,28],['L',11,13,15,23,25,27]].forEach(([s,sh,el,wr,hp,kn,an])=>{
+    const sd = s==='R' ? d : -d;
+    const h = find('H', s);
+    g[wr] = h ? {x:h.x, y:h.y} : {x:g[sh].x + sd*0.12*F.sw, y:g[sh].y + F.arm*0.92};
+    g[el] = {x:(g[sh].x+g[wr].x)/2 + sd*0.05*F.arm, y:(g[sh].y+g[wr].y)/2};
+    const f = find('F', s);
+    g[an] = f ? {x:f.x, y:f.y} : {x:F.cx + sd*0.22*F.sw, y:F.floor};
+    g[kn] = {x:(g[hp].x+g[an].x)/2 + sd*(dropS>0 ? 0.28*F.leg : 0), y:(g[hp].y+g[an].y)/2};
+  });
+  const hd = tg.find(t=>t.k==='D');
+  g[0] = hd ? {x:hd.x, y:hd.y} : {x:F.cx, y:F.noseY + dropS};
+  g.hr = F.T*0.3;
+  return g;
+}
+function kabeTargets(pl, F, r){
+  if(S.kabeSrc==='sensei' && senseiPoses.length) return senseiTargets(pl, F, r, pickSensei(pl));
+  const squat = S.kabeSquat && Math.random() < 0.25;
+  const dropS = squat ? F.leg*0.4 : 0;
+  const F2 = squat ? Object.assign({}, F, {sy:F.sy+dropS, hy:F.hy+dropS, noseY:F.noseY+dropS}) : F;
+  const out = [];
+  let hp = handParts(), fp = footParts();
+  if(!hp.length && !fp.length) hp = [[S.lr?'RH':'H','R'], [S.lr?'LH':'H','L']];
+  const names = squat ? ['yoko','naname','koshi','ue'] : ['ue','naname','yoko','koshi','kata','atama'];
+  const pk = ()=> names[Math.floor(Math.random()*names.length)];
+  const nR = pk(), nL = Math.random()<0.5 ? nR : pk();
+  hp.forEach(([part,s])=> out.push(mkT({p:part, k:'H', s}, clampZ(pl, handPos(F2, s, s==='R' ? nR : nL), r), r, '')));
+  if(fp.length && !squat){
+    const roll = Math.random();
+    if(roll < 0.4){
+      const [part,s] = fp[Math.floor(Math.random()*fp.length)];
+      out.push(mkT({p:part, k:'F', s}, clampZ(pl, footPos(F, s, Math.random()<0.5 ? 'sukoshi' : 'yokoage', r), r), r, ''));
+    }else if(roll < 0.75){
+      fp.forEach(([part,s])=> out.push(mkT({p:part, k:'F', s}, clampZ(pl, footPos(F, s, 'hiraku', r), r), r, '')));
+    }
+  }
+  if(squat) out.push(mkHD(pl, F, r, F.cx, F.noseY + dropS, 'しゃがむ'));
+  out.ghost = ghostAuto(F, out, dropS);
+  return out;
+}
+
+/* ----- リズム体操 ----- */
+function rhythmTargets(pl, F, r){
+  const seq = S.rhySeq.length ? S.rhySeq : ['ue'];
+  const n = seq[pl.hi % seq.length], next = seq[(pl.hi+1) % seq.length]; pl.hi++;
+  const out = [];
+  let hp = handParts(), fp = footParts();
+  if(!hp.length && !fp.length) hp = [[S.lr?'RH':'H','R'], [S.lr?'LH':'H','L']];
+  hp.forEach(([part,s])=> out.push(mkT({p:part, k:'H', s}, clampZ(pl, handPos(F, s, n), r), r, POS_JP[n])));
+  let feetTxt = '';
+  if(fp.length){
+    pl.fs = pl.fs==='R' ? 'L' : 'R';
+    const o = fp.length===2 ? (fp.find(x=>x[1]===pl.fs) || fp[0]) : fp[0];
+    out.push(mkT({p:o[0], k:'F', s:o[1]}, clampZ(pl, footPos(F, o[1], 'sukoshi', r), r), r, 'あしぶみ'));
+    feetTxt = 'あしぶみ';
+  }
+  const handTxt = hp.length ? (hp.length===2 ? 'りょうて ' : PART_JP[hp[0][0]]+' ')+POS_JP[n] : '';
+  out.title = [handTxt, feetTxt].filter(Boolean).join(' ＋ ') + (hp.length ? '　つぎ → '+POS_JP[next] : '');
+  return out;
+}
+
+/* ----- 筋トレ ----- */
+function kinTask(pl, F, r){
+  const k = pl.kin, menu = kinMenu();
+  if(k.phase==='done') return null;
+  const ex = menu[k.ei], name = KIN_JP[ex];
+  const head = name+'　セット '+k.set+'/'+S.kinSets;
+  if(k.phase==='rest') return mkTask([], 0, 'やすみ', {kind:'kin', rest:true, dur:S.kinRest}, F);
+  if(k.phase==='intro'){
+    if(pl.i===0) say(name);
+    if(ex==='wsq'){
+      const tg = ['R','L'].map(s=> mkT({p:S.lr ? s+'F' : 'F', k:'F', s}, clampZ(pl, {x:F.cx + sdir(F,s)*0.42*F.leg, y:F.floor - 0.02*F.leg}, r), r, 'ひらく'));
+      return mkTask(tg, 0.3, head+'　あしを ひろく ひらいてね', {kind:'kin', intro:true}, F);
+    }
+    return mkTask([], 0, head+'　はじめるよ', {kind:'kin', intro:true, dur:2}, F);
+  }
+  const depth = {shallow:0.22, normal:0.32, deep:0.42}[S.kinDepth] * F.leg;
+  const cnt = name+'　'+k.rep+'/'+S.kinReps+'かい　セット '+k.set+'/'+S.kinSets;
+  const s = k.side, d = sdir(F,s), K = S.kinKeep;
+  let tg = [], keep = 0, inst = '';
+  if(ex==='sq' || ex==='wsq'){
+    if(k.step===0){ tg = [mkHD(pl, F, r, F.cx, F.noseY + depth, 'しゃがむ')]; keep = K; inst = 'しゃがむ'; }
+    else { tg = [mkHD(pl, F, r, F.cx, F.noseY, 'たつ')]; inst = 'たつ'; }
+  }else if(ex==='momo' || ex==='yokoage'){
+    tg = [mkT({p:S.lr ? s+'F' : 'F', k:'F', s}, clampZ(pl, footPos(F, s, ex==='momo' ? 'takaku' : 'yokoage', r), r), r, '')];
+    keep = K; inst = PART_JP[s+'F']+'を あげる';
+  }else if(ex==='banzai'){
+    const nm = k.step===0 ? 'kata' : 'ue';
+    tg = ['R','L'].map(ss=> mkT({p:S.lr ? ss+'H' : 'H', k:'H', s:ss}, clampZ(pl, handPos(F, ss, nm), r), r, POS_JP[nm]));
+    keep = k.step===1 ? K : 0; inst = k.step===0 ? 'てを かたに' : 'てを うえに';
+  }else{   // サイドランジ
+    if(k.step===0){
+      tg = [mkT({p:S.lr ? s+'F' : 'F', k:'F', s}, clampZ(pl, {x:F.cx + d*0.75*F.leg, y:F.floor - 0.02*F.leg}, r), r, ''),
+            mkHD(pl, F, r, F.cx + d*0.3*F.leg, F.noseY + depth*0.8, 'しゃがむ')];
+      keep = K; inst = PART_JP[s+'F']+'を ふみだして しゃがむ';
+    }else{ tg = [mkHD(pl, F, r, F.cx, F.noseY, 'もどる')]; inst = 'もどる'; }
+  }
+  return mkTask(tg, keep, cnt+'　'+inst, {kind:'kin'}, F);
+}
+// できたあと、つぎへ すすめる（'rep'：1かい おわった）
+function kinAdvance(pl, task){
+  const k = pl.kin, menu = kinMenu(), ex = menu[k.ei];
+  if(task.rest){ k.phase = 'intro'; return 'next'; }
+  if(k.phase==='intro'){ k.phase = 'go'; k.step = 0; return 'next'; }
+  const last = (ex==='momo' || ex==='yokoage') ? 0 : 1;
+  if(k.step < last){ k.step++; return 'mid'; }
+  k.step = 0; k.rep++; pl.score++; k.side = k.side==='R' ? 'L' : 'R';
+  if(pl.i===0) say(String(k.rep));
+  if(k.rep >= S.kinReps){
+    k.rep = 0; k.side = 'R'; k.set++;
+    if(k.set > S.kinSets){
+      k.set = 1; k.ei++;
+      if(k.ei >= menu.length){ k.phase = 'done'; if(pl.i===0) setTimeout(()=>say('おわり'), 700); return 'rep'; }
+    }
+    k.phase = S.kinRest > 0 ? 'rest' : 'intro';
+    if(k.phase==='rest' && pl.i===0) setTimeout(()=>say('やすみ'), 700);
+  }
+  return 'rep';
+}
+
 function makeTask(pl, now){
   if(!pl.b.ok) return null;
   const F = frameOf(pl, now), r = targR(F);
+  if(S.mode==='sensei'){
+    const pose = pickSensei(pl); if(!pose) return null;
+    const tg = senseiTargets(pl, F, r, pose);
+    return mkTask(tg, S.senseiKeep, 'せんせいの ポーズを まねっこ してね', {ghost:tg.ghost, silW:F.T*0.42}, F);
+  }
+  if(S.mode==='kabe'){
+    const tg = kabeTargets(pl, F, r);
+    return mkTask(tg, 0, 'かべの あなに ポーズを あわせてね', {ghost:tg.ghost, silW:F.T*0.45, dur:KABE_DUR[S.kabeSpeed], outDur:0.6}, F);
+  }
+  if(S.mode==='rhythm'){
+    const tg = rhythmTargets(pl, F, r);
+    return mkTask(tg, 0, tg.title, {}, F);
+  }
+  if(S.mode==='kintore') return kinTask(pl, F, r);
   let tg = [], keep = S.mode==='pose' ? S.keepPose : S.keepTouch, kind = S.mode, title = '';
   if(S.mode==='balance'){
     const fixed = S.foot==='R' ? 'R' : S.foot==='L' ? 'L' : null;
@@ -1335,19 +1746,53 @@ function skipTask(pl, byTap){
   task.state = 'out'; task.outT = 0; task.ok = false;
   pl.spawnT = byTap ? 0.35 : 0.5;
 }
+function onSuccess(pl, task){
+  task.state = 'out'; task.outT = 0; task.ok = true;
+  const c = task.tg.length ? task.tg.reduce((a,t)=>({x:a.x+t.x/task.tg.length, y:a.y+t.y/task.tg.length}), {x:0,y:0}) : null;
+  const fx = ()=>{ task.tg.forEach(t=>burst(t.x, t.y, partColor(pl, t.part), t.r)); };
+  if(task.kind==='kin'){
+    const res = kinAdvance(pl, task);
+    pl.spawnT = 0.05;
+    if(res!=='rep'){ task.outDur = 0.15; if(task.tg.length) SFX.touch(); return; }
+    task.outDur = 0.3; fx(); SFX.hit();
+    if(c) addFloat(c.x, Math.min(...task.tg.map(t=>t.y)) - task.tg[0].r - MIN*0.03, (pl.kin.rep || S.kinReps)+'かい！', '#1E2833', Math.max(34, MIN*0.06), 0.8);
+    return;
+  }
+  pl.score++; fx(); SFX.hit(); pl.spawnT = 0.55;
+  if(c) addFloat(c.x, Math.min(...task.tg.map(t=>t.y)) - task.tg[0].r - MIN*0.03, task.kind==='kabe' ? 'くぐれた！' : 'できた！', '#1E2833', Math.max(34, MIN*0.06), 0.9);
+}
+function kabeMiss(pl, task){
+  task.state = 'out'; task.outT = 0; task.ok = false;
+  const z = zoneOf(pl);
+  addFloat((z.xa+z.xb)/2, H*0.45, 'おしい！ つぎも がんばろう', '#1E2833', Math.max(30, MIN*0.05), 1.1);
+  tone(440,.18,'sine',.1); pl.spawnT = 0.6;
+}
 function updateGame(dt, now){
+  let newPeriod = false;
+  if(S.mode==='rhythm'){
+    const BL = RHY_BEAT[S.rhyTempo];
+    rhy.t += dt;
+    const b = Math.floor(rhy.t / BL);
+    if(b !== rhy.beat){
+      rhy.beat = b; rhy.cnt = (b % 8) + 1; rhy.flash = 1;
+      if(b % 2 === 0){ newPeriod = true; tone(988,.09,'triangle',.22); } else tone(660,.07,'triangle',.15);
+    }
+    rhy.flash = Math.max(0, rhy.flash - dt*3);
+  }
   for(const pl of players){
     pl.wrongCd = Math.max(0, pl.wrongCd - dt);
     if(!pl.active) continue;
+    if(newPeriod){ pl.task = makeTask(pl, now); if(pl.task) pl.rhyN++; }
     // 足が みえているか
     const needFeet = pl.task && pl.task.tg.some(t=>t.k==='F');
     if(needFeet && !pl.pts.RF.seen && !pl.pts.LF.seen) pl.feetMiss += dt; else pl.feetMiss = 0;
 
     if(pl.task && pl.task.state==='out'){
       pl.task.outT += dt;
-      if(pl.task.outT > 0.45) pl.task = null; else continue;
+      if(pl.task.outT > (pl.task.outDur || 0.45)) pl.task = null; else continue;
     }
     if(!pl.task){
+      if(S.mode==='rhythm') continue;
       pl.spawnT -= dt;
       if(pl.spawnT <= 0){ pl.task = makeTask(pl, now); if(!pl.task) pl.spawnT = 0.2; }
       continue;
@@ -1356,14 +1801,22 @@ function updateGame(dt, now){
     task.age += dt;
     if(task.state==='in' && task.age >= 0.3) task.state = 'live';
     if(task.state!=='live') continue;
+    if(!task.tg.length){ if(task.dur && task.age >= task.dur) onSuccess(pl, task); continue; }   // やすみ など
 
     // 人が 大きく うごいたら、おだいを つくりなおす
-    if(!task.travel && Math.abs(pl.b.cx - task.cx0) > task.sw0*1.3) task.away += dt; else task.away = 0;
+    const movable = !task.travel && (task.kind==='touch' || task.kind==='pose' || task.kind==='balance' || task.kind==='sensei');
+    if(movable && Math.abs(pl.b.cx - task.cx0) > task.sw0*1.3) task.away += dt; else task.away = 0;
     if(task.away > 1.0){ pl.task = null; pl.spawnT = 0.1; continue; }
 
     if(task.travel) for(const t of task.tg){ if(t.rel) t.x = clampZ(pl, {x:pl.b.cx + t.dx, y:t.y}, t.r).x; }
     const all = checkTask(pl, task);
     task.tg.forEach(t=>{ t.lit = t.cov ? Math.min(1, t.lit + dt*8) : Math.max(0, t.lit - dt*5); });
+    if(task.kind==='kabe'){
+      // かべが ついた ときに ポーズが あっていれば くぐれる
+      if(task.age >= task.dur - 0.25 && all){ task.hold += dt; if(task.hold >= 0.12) onSuccess(pl, task); }
+      else if(task.age > task.dur + 0.6) kabeMiss(pl, task);
+      continue;
+    }
     if(!all) wrongHint(pl, task);
     const keep = Math.max(0.12, task.keep);
     if(all){
@@ -1373,15 +1826,8 @@ function updateGame(dt, now){
       task.hold = Math.max(0, task.hold - dt*(task.keep >= 1 ? 1.5 : 4));
       if(task.hold < 1) task.lastSec = 0;
     }
-    if(task.hold >= keep){
-      task.state = 'out'; task.outT = 0; task.ok = true; pl.score++;
-      task.tg.forEach(t=>burst(t.x, t.y, partColor(pl, t.part), t.r));
-      const c = task.tg.reduce((a,t)=>({x:a.x+t.x/task.tg.length, y:a.y+t.y/task.tg.length}), {x:0,y:0});
-      addFloat(c.x, Math.min(...task.tg.map(t=>t.y)) - task.tg[0].r - MIN*0.03, 'できた！', '#1E2833', Math.max(34, MIN*0.06), 0.9);
-      SFX.hit(); pl.spawnT = 0.55;
-      continue;
-    }
-    if(S.skip > 0 && task.age > S.skip && task.hold <= 0){ skipTask(pl, false); }
+    if(task.hold >= keep){ onSuccess(pl, task); continue; }
+    if(S.skip > 0 && movable && task.age > S.skip && task.hold <= 0){ skipTask(pl, false); }
   }
 }
 
@@ -1437,11 +1883,14 @@ function loop(now){
     }
   }
   if(phase==='play'){
-    remain -= dt;
+    if(S.mode!=='kintore') remain -= dt;
     updateGame(dt, now);
-    if(remain <= 0){ remain = 0; updateHud(); endGame(); return; }
+    if(S.mode==='kintore'){
+      if(players.every(p=>p.kin && p.kin.phase==='done' && !p.task)){ kinEndT += dt; if(kinEndT > 1.2){ updateHud(); endGame(); return; } }
+    }else if(remain <= 0){ remain = 0; updateHud(); endGame(); return; }
     updateHud();
   }
+  if(phase==='record') updateRecord(dt, now);
   updateFx(dt, k);
   draw(now);
 }
@@ -1561,6 +2010,56 @@ function drawTarget(pl, task, t, now){
   ctx.restore();
 }
 function sdirDraw(pl){ return pl.b.dir || 1; }
+// お手本の 線（先生ポーズ・かべの あな）
+function gp(g, i){ if(i===15) return g.h11 || g[15]; if(i===16) return g.h12 || g[16]; if(i===27) return g.f23 || g[27]; if(i===28) return g.f24 || g[28]; return g[i]; }
+function drawGhostOn(c, g, lw, color, alpha, solid){
+  c.save(); c.globalAlpha = alpha; c.strokeStyle = color; c.fillStyle = color; c.lineWidth = lw; c.lineCap = 'round'; c.lineJoin = 'round';
+  c.beginPath();
+  for(const [a,b] of BONES){ const p = gp(g,a), q = gp(g,b); if(!p || !q) continue; c.moveTo(p.x,p.y); c.lineTo(q.x,q.y); }
+  if(g[0] && g[11] && g[12]){ c.moveTo((g[11].x+g[12].x)/2, (g[11].y+g[12].y)/2); c.lineTo(g[0].x, g[0].y); }
+  c.stroke();
+  if(solid && g[11] && g[12] && g[23] && g[24]){
+    c.beginPath(); c.moveTo(g[11].x,g[11].y); c.lineTo(g[12].x,g[12].y); c.lineTo(g[24].x,g[24].y); c.lineTo(g[23].x,g[23].y); c.closePath(); c.fill();
+  }
+  if(g[0]){ c.beginPath(); c.arc(g[0].x, g[0].y, g.hr*(solid ? 1.25 : 1), 0, Math.PI*2); if(solid) c.fill(); else { c.lineWidth = lw*0.6; c.stroke(); } }
+  c.restore();
+}
+let wallCv = null;
+function drawWall(pl, task){
+  if(!wallCv) wallCv = document.createElement('canvas');
+  const cw = Math.max(1, Math.round(W)), chh = Math.max(1, Math.round(H));
+  if(wallCv.width!==cw || wallCv.height!==chh){ wallCv.width = cw; wallCv.height = chh; }
+  const g = wallCv.getContext('2d');
+  const p = (task.age + (task.state==='out' ? task.outT : 0)) / task.dur;
+  const z = zoneOf(pl), cx = (z.xa+z.xb)/2, cy = (HUDH+H)/2;
+  let sc, a = 0.9;
+  if(p <= 1) sc = 0.18 + 0.82*Math.pow(Math.max(0,p), 1.6);
+  else { sc = 1 + (p-1)*2.2; a = Math.max(0, 0.9*(1 - (p-1)*2.5)); }
+  g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,cw,chh);
+  g.setTransform(sc,0,0,sc, cx*(1-sc), cy*(1-sc));
+  const wx = z.xa+6, wy = HUDH+4, ww = z.xb-z.xa-12, wh = H-HUDH-8;
+  g.fillStyle = task.state==='out' ? (task.ok ? '#6FBF8E' : '#C9A27A') : '#A9B6C6'; g.fillRect(wx, wy, ww, wh);
+  // れんがの もよう
+  g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineWidth = 3;
+  const bh = wh/9, bw = bh*2.2;
+  g.beginPath();
+  for(let i=1;i<9;i++){ g.moveTo(wx, wy+i*bh); g.lineTo(wx+ww, wy+i*bh); }
+  for(let i=0;i<9;i++){ const off = (i%2) ? bw/2 : 0; for(let x=wx+off; x<wx+ww; x+=bw){ g.moveTo(x, wy+i*bh); g.lineTo(x, wy+(i+1)*bh); } }
+  g.stroke();
+  g.lineWidth = 8; g.strokeStyle = '#7D8B9C'; g.strokeRect(wx, wy, ww, wh);
+  // あな
+  g.globalCompositeOperation = 'destination-out';
+  drawGhostOn(g, task.ghost, task.silW, '#000', 1, true);
+  for(const t of task.tg){ g.beginPath(); g.arc(t.x, t.y, t.r*1.2, 0, Math.PI*2); g.fill(); }
+  g.globalCompositeOperation = 'source-over';
+  for(const t of task.tg){
+    const col = partColor(pl, t.part);
+    g.beginPath(); g.arc(t.x, t.y, t.r*1.05, 0, Math.PI*2);
+    if(t.cov){ g.fillStyle = col+'66'; g.fill(); }
+    g.lineWidth = Math.max(5, t.r*0.14); g.strokeStyle = col; g.stroke();
+  }
+  ctx.save(); ctx.globalAlpha = a; ctx.drawImage(wallCv, 0, 0, cw, chh, 0, 0, W, H); ctx.restore();
+}
 function drawPt(pl, pt, now){
   if(pt.a <= 0.01) return;
   const id = pt.id, color = partColor(pl, id), foot = id[1]==='F';
@@ -1604,7 +2103,7 @@ function draw(now){
     ctx.fillRect(0,0,W,H);
   }
   const lw = Math.max(4, MIN*0.008);
-  if(phase==='register'){
+  if(phase==='register' || phase==='record'){
     for(const lm of poses){
       const isC = regCand && regCand.lm===lm;
       const reg = players.find(p=>p.active && p.lm===lm);
@@ -1632,12 +2131,21 @@ function draw(now){
   if(phase==='play' || gameStarted){
     for(const pl of players){
       const task = pl.task; if(!task) continue;
-      for(const t of task.tg) drawTarget(pl, task, t, now);
+      if(task.kind==='kabe') drawWall(pl, task);
+      else{
+        if(task.ghost){ drawGhostOn(ctx, task.ghost, task.silW*0.6, '#FFFFFF', 0.55, false); drawGhostOn(ctx, task.ghost, lw*1.2, '#12906A', 0.75, false); }
+        for(const t of task.tg) drawTarget(pl, task, t, now);
+      }
       if(task.state!=='out'){
         const z = zoneOf(pl), fs = Math.max(26, Math.min(MIN*0.06, (z.xb-z.xa)*0.05));
         let title = task.title;
         if(task.keep >= 2 && task.hold > 0) title += '　あと '+Math.max(1, Math.ceil(task.keep - task.hold))+' びょう';
+        if(task.rest) title += '　あと '+Math.max(1, Math.ceil(task.dur - task.age))+' びょう';
         canvasLabel(title, (z.xa+z.xb)/2, HUDH + fs*0.85, fs, '#1E2833', null, (z.xb-z.xa)*0.94);
+      }
+      if(S.mode==='rhythm' && phase==='play'){
+        const z = zoneOf(pl), fs = MIN*0.11;
+        canvasLabel(String(rhy.cnt), z.xa + fs*0.9, H - fs*0.85, fs*(1 + rhy.flash*0.25), rhy.beat % 2===0 ? '#E5487A' : '#2C6BDF');
       }
       if(pl.feetMiss > 1.5){
         const z = zoneOf(pl), fs = Math.max(22, MIN*0.04);
@@ -1659,12 +2167,17 @@ function draw(now){
   // 手・足・あたま
   for(const pl of players){
     if(!pl.active) continue;
-    const fset = S.mode==='balance' && S.foot==='none' ? 'both' : S.foot;
-    if(fset!=='none' && phase!=='register'){ if(fset!=='R') drawPt(pl, pl.pts.LF, now); if(fset!=='L') drawPt(pl, pl.pts.RF, now); }
-    const hset = phase==='register' ? 'both' : S.hand;
-    if(hset!=='none'){ if(hset!=='R') drawPt(pl, pl.pts.LH, now); if(hset!=='L') drawPt(pl, pl.pts.RH, now); }
-    if(pl.task && pl.task.tg.some(t=>t.k==='D')) drawPt(pl, pl.pts.HD, now);
+    const need = new Set();
+    if(phase==='register'){ need.add('LH'); need.add('RH'); }
+    else if(S.mode!=='kintore'){
+      const fset = S.mode==='balance' && S.foot==='none' ? 'both' : S.foot;
+      if(fset!=='none'){ if(fset!=='R') need.add('LF'); if(fset!=='L') need.add('RF'); }
+      if(S.hand!=='none'){ if(S.hand!=='R') need.add('LH'); if(S.hand!=='L') need.add('RH'); }
+    }
+    if(pl.task) pl.task.tg.forEach(t=>CAND[t.part].forEach(id=>need.add(id)));
+    ['LF','RF','LH','RH','HD'].forEach(id=>{ if(need.has(id)) drawPt(pl, pl.pts[id], now); });
   }
+  if(phase==='record' && now - recFlashT < 450){ ctx.save(); ctx.globalAlpha = 1 - (now-recFlashT)/450; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,W,H); ctx.restore(); }
   for(const f of floats){
     const q = f.t/f.max;
     ctx.save(); ctx.globalAlpha = q<0.75 ? 1 : (1-q)/0.25;
@@ -1698,7 +2211,7 @@ function demoPoses(now){
   }
   return [lm];
 }
-if(DEMO) window.__pg2 = { S, players:()=>players, frameOf, makeTask, phase:()=>phase, handPos, footPos };
+if(DEMO) window.__pg2 = { S, players:()=>players, frameOf, makeTask, phase:()=>phase, handPos, footPos, sensei:()=>senseiPoses };
 
 /* ================= はじめの表示 ================= */
 renderAll();
