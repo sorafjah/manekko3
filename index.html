@@ -272,7 +272,7 @@ const DEF = {
   senseiOrder:'seq', senseiKeep:2,
   kabeSpeed:'normal', kabeSrc:'auto', kabeSquat:true,
   rhyTempo:'normal', rhySeq:['ue','kata','yoko','koshi'],
-  kinMenu:['wsq','momo','banzai'], kinReps:4, kinSets:2, kinKeep:2, kinDefV:1, kinDepth:'normal', kinRest:15, voice:true,
+  kinMenu:['wsq','momo','banzai'], kinReps:2, kinSets:2, kinKeep:1, kinDefV:2, kinDepth:'normal', kinRest:15, voice:true,
   camera:'user', mirror:true, video:'full', model:'full', sound:true
 };
 const MODE_IDS = ['touch','pose','balance','sensei','kabe','rhythm','kintore'];
@@ -281,7 +281,7 @@ try{
   const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
   if(s && typeof s === 'object'){
     // 筋トレの 初期値を かえたので、前に 保存された 回数・キープは あたらしい 初期値に する
-    if(s.kinDefV !== 1){ delete s.kinReps; delete s.kinKeep; s.kinDefV = 1; }
+    if(s.kinDefV !== 2){ delete s.kinReps; delete s.kinKeep; s.kinDefV = 2; }
     S = Object.assign({}, DEF, s);
   }
 }catch(e){}
@@ -306,6 +306,13 @@ const KIN = [['wsq','ワイドスクワット'],['sq','スクワット'],['momo'
 const KIN_JP = {}; KIN.forEach(([k,v])=>KIN_JP[k]=v);
 const kinMenu = ()=> S.kinMenu.length ? S.kinMenu : ['sq'];
 const KABE_DUR = {slow:6, normal:4.5, fast:3};
+/* ===== 筋トレ：現場で 調整できる 数値 =====
+   KIN_DEPTH   … しゃがむ ふかさ（あさい・ふつう・ふかい）。足の 長さに かける わりあい。頭の まとの 下がりぐあい
+   KIN_HIP_RATIO … こしの 条件。頭の 下がりぐあいの 何わり、こしが 下がれば よいか（0.6 = 6わり）
+   KIN_HIP_LOST  … こしが この ミリ秒 みえないときは、こしの 条件を つかわない（頭だけで はんてい） */
+const KIN_DEPTH = {shallow:0.22, normal:0.32, deep:0.42};
+const KIN_HIP_RATIO = 0.6;
+const KIN_HIP_LOST = 1000;
 const RHY_BEAT = {slow:1.2, normal:0.9, fast:0.7};
 const SPEED_JP = {slow:'ゆっくり', normal:'ふつう', fast:'はやい'};
 
@@ -804,7 +811,7 @@ function makePt(id){
 }
 
 /* ================= あそぶ人 ================= */
-function makeBody(){ return {ok:false, torso:0, arm:0, armN:0, leg:0, legN:0, cx:0, sw:0, RS:null, LS:null, refSY:0, noseOff:null, ankY:null, ankT:-1e9, dir:1}; }
+function makeBody(){ return {ok:false, torso:0, arm:0, armN:0, leg:0, legN:0, cx:0, sw:0, RS:null, LS:null, refSY:0, noseOff:null, ankY:null, ankT:-1e9, dir:1, hipY:null, refHipY:null, hipT:-1e9}; }
 function makePlayer(i){
   const pts = {}; PTS.forEach(id=>pts[id]=makePt(id));
   return { i, active:false, cx:0, cy:0, sw:0, lm:null, lastSeen:0, pts, b:makeBody(), score:0, color:pColor(i),
@@ -887,6 +894,13 @@ function updBody(pl, lm, dt, now){
   if(lh && rh){
     const t = dist(ms, {x:(lh.x+rh.x)/2, y:(lh.y+rh.y)/2});
     B.torso = !B.torso ? t : B.torso + (t-B.torso)*(t>B.torso ? 0.2 : 0.03);
+    // こし（23・24の まんなか）。立っているときの こしの 高さは、上へは すぐ、下へは ゆっくり
+    const hy = (lh.y+rh.y)/2;
+    B.hipY = B.hipY==null ? hy : B.hipY + (hy-B.hipY)*0.5;
+    if(B.refHipY==null) B.refHipY = hy;
+    else if(hy < B.refHipY) B.refHipY += (hy-B.refHipY)*0.5;
+    else B.refHipY += (hy-B.refHipY)*Math.min(1, dt*0.12);
+    B.hipT = now;
   }
   if(!B.torso) B.torso = sw*1.25;
   const seg2 = (i,j,k,v)=>{ const A=P(i,v), Bq=P(j,v), C=P(k,v); return (A&&Bq&&C) ? dist(A,Bq)+dist(Bq,C) : 0; };
@@ -1601,12 +1615,13 @@ function kinTask(pl, F, r){
     }
     return mkTask([], 0, head+'　はじめるよ', {kind:'kin', intro:true, dur:2}, F);
   }
-  const depth = {shallow:0.22, normal:0.32, deep:0.42}[S.kinDepth] * F.leg;
+  const depth = KIN_DEPTH[S.kinDepth] * F.leg;
+  let hipDrop = 0;   // こしが これだけ 下がる ことも 条件（0 は なし）
   const cnt = name+'　'+k.rep+'/'+S.kinReps+'かい　セット '+k.set+'/'+S.kinSets;
   const s = k.side, d = sdir(F,s), K = S.kinKeep;
   let tg = [], keep = 0, inst = '';
   if(ex==='sq' || ex==='wsq'){
-    if(k.step===0){ tg = [mkHD(pl, F, r, F.cx, F.noseY + depth, 'しゃがむ')]; keep = K; inst = 'しゃがむ'; }
+    if(k.step===0){ tg = [mkHD(pl, F, r, F.cx, F.noseY + depth, 'しゃがむ')]; keep = K; inst = 'しゃがむ'; hipDrop = depth*KIN_HIP_RATIO; }
     else { tg = [mkHD(pl, F, r, F.cx, F.noseY, 'たつ')]; inst = 'たつ'; }
   }else if(ex==='momo' || ex==='yokoage'){
     tg = [mkT({p:S.lr ? s+'F' : 'F', k:'F', s}, clampZ(pl, footPos(F, s, ex==='momo' ? 'takaku' : 'yokoage', r), r), r, '')];
@@ -1619,10 +1634,10 @@ function kinTask(pl, F, r){
     if(k.step===0){
       tg = [mkT({p:S.lr ? s+'F' : 'F', k:'F', s}, clampZ(pl, {x:F.cx + d*0.75*F.leg, y:F.floor - 0.02*F.leg}, r), r, ''),
             mkHD(pl, F, r, F.cx + d*0.3*F.leg, F.noseY + depth*0.8, 'しゃがむ')];
-      keep = K; inst = PART_JP[s+'F']+'を ふみだして しゃがむ';
+      keep = K; inst = PART_JP[s+'F']+'を ふみだして しゃがむ'; hipDrop = depth*0.8*KIN_HIP_RATIO;
     }else{ tg = [mkHD(pl, F, r, F.cx, F.noseY, 'もどる')]; inst = 'もどる'; }
   }
-  return mkTask(tg, keep, cnt+'　'+inst, {kind:'kin'}, F);
+  return mkTask(tg, keep, cnt+'　'+inst, {kind:'kin', hipDrop}, F);
 }
 // できたあと、つぎへ すすめる（'rep'：1かい おわった）
 function kinAdvance(pl, task){
@@ -1813,7 +1828,17 @@ function updateGame(dt, now){
     if(task.away > 1.0){ pl.task = null; pl.spawnT = 0.1; continue; }
 
     if(task.travel) for(const t of task.tg){ if(t.rel) t.x = clampZ(pl, {x:pl.b.cx + t.dx, y:t.y}, t.r).x; }
-    const all = checkTask(pl, task);
+    let all = checkTask(pl, task);
+    if(task.hipDrop){
+      // 筋トレの しゃがむ：頭の まとに くわえて、こしも 下がっているか
+      const B = pl.b, hipSeen = B.refHipY!=null && now - B.hipT < KIN_HIP_LOST;
+      task.hipOK = !hipSeen || (B.hipY - B.refHipY) >= task.hipDrop;
+      if(all && !task.hipOK && pl.wrongCd <= 0){
+        pl.wrongCd = 1.8; SFX.wrong();
+        addFloat(B.cx, B.refHipY + task.hipDrop + MIN*0.08, 'ひざを まげて、こしを さげてね', '#1E2833');
+      }
+      all = all && task.hipOK;
+    }
     task.tg.forEach(t=>{ t.lit = t.cov ? Math.min(1, t.lit + dt*8) : Math.max(0, t.lit - dt*5); });
     if(task.kind==='kabe'){
       // かべが ついた ときに ポーズが あっていれば くぐれる
@@ -2028,6 +2053,19 @@ function drawGhostOn(c, g, lw, color, alpha, solid){
   if(g[0]){ c.beginPath(); c.arc(g[0].x, g[0].y, g.hr*(solid ? 1.25 : 1), 0, Math.PI*2); if(solid) c.fill(); else { c.lineWidth = lw*0.6; c.stroke(); } }
   c.restore();
 }
+// こしの めやす：ここまで こしを 下げると よい 線と、いまの こしの 位置
+function drawHipGuide(pl, task, lw){
+  const B = pl.b, y = B.refHipY + task.hipDrop, w = B.sw*1.6, x0 = B.cx - w, x1 = B.cx + w;
+  const ok = !!task.hipOK, col = ok ? '#1FA85A' : '#5A6878';
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = lw*2; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+  ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash([lw*2.5, lw*2]);
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.setLineDash([]);
+  if(B.hipY!=null){ ctx.beginPath(); ctx.arc(B.cx, B.hipY, lw*2.2, 0, Math.PI*2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = lw*0.8; ctx.strokeStyle = '#FFFFFF'; ctx.stroke(); }
+  ctx.restore();
+  canvasLabel(ok ? 'こし OK' : 'こしを ここまで', x1 + Math.max(60, MIN*0.08), y, Math.max(20, MIN*0.035), col);
+}
 let wallCv = null;
 function drawWall(pl, task){
   if(!wallCv) wallCv = document.createElement('canvas');
@@ -2138,6 +2176,7 @@ function draw(now){
       if(task.kind==='kabe') drawWall(pl, task);
       else{
         if(task.ghost){ drawGhostOn(ctx, task.ghost, task.silW*0.6, '#FFFFFF', 0.55, false); drawGhostOn(ctx, task.ghost, lw*1.2, '#12906A', 0.75, false); }
+        if(task.hipDrop && pl.b.refHipY!=null && task.state!=='out') drawHipGuide(pl, task, lw);
         for(const t of task.tg) drawTarget(pl, task, t, now);
       }
       if(task.state!=='out'){
@@ -2210,7 +2249,8 @@ function demoPoses(now){
       const n = fromScr(t);
       const set = ix=>ix.forEach(i=>{ lm[i].x = n.x; lm[i].y = n.y; });
       if(id==='RH') set([16,18,20]); else if(id==='LH') set([15,17,19]);
-      else if(id==='RF') set(FOOT_LM.R); else if(id==='LF') set(FOOT_LM.L); else if(id==='HD') set([0]);
+      else if(id==='RF') set(FOOT_LM.R); else if(id==='LF') set(FOOT_LM.L);
+      else if(id==='HD'){ const dy = n.y - lm[0].y; set([0]); if(window.__demoHip) [23,24].forEach(i=>{ lm[i].y += dy; }); }
     }
   }
   return [lm];
