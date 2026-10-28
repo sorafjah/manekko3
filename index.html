@@ -272,14 +272,18 @@ const DEF = {
   senseiOrder:'seq', senseiKeep:2,
   kabeSpeed:'normal', kabeSrc:'auto', kabeSquat:true,
   rhyTempo:'normal', rhySeq:['ue','kata','yoko','koshi'],
-  kinMenu:['wsq','momo','banzai'], kinReps:10, kinSets:2, kinKeep:0, kinDepth:'normal', kinRest:15, voice:true,
+  kinMenu:['wsq','momo','banzai'], kinReps:4, kinSets:2, kinKeep:2, kinDefV:1, kinDepth:'normal', kinRest:15, voice:true,
   camera:'user', mirror:true, video:'full', model:'full', sound:true
 };
 const MODE_IDS = ['touch','pose','balance','sensei','kabe','rhythm','kintore'];
 let S = Object.assign({}, DEF);
 try{
   const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-  if(s && typeof s === 'object') S = Object.assign({}, DEF, s);
+  if(s && typeof s === 'object'){
+    // 筋トレの 初期値を かえたので、前に 保存された 回数・キープは あたらしい 初期値に する
+    if(s.kinDefV !== 1){ delete s.kinReps; delete s.kinKeep; s.kinDefV = 1; }
+    S = Object.assign({}, DEF, s);
+  }
 }catch(e){}
 ['poseHand','poseFoot','rhySeq','kinMenu'].forEach(k=>{ if(!Array.isArray(S[k])) S[k] = DEF[k].slice(); });
 try{ const q = new URLSearchParams(location.search).get('mode'); if(q && MODE_IDS.includes(q)) S.mode = q; }catch(e){}
