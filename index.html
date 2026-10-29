@@ -272,7 +272,7 @@ const DEF = {
   senseiOrder:'seq', senseiKeep:2,
   kabeSpeed:'normal', kabeSrc:'auto', kabeSquat:true,
   rhyTempo:'normal', rhySeq:['ue','kata','yoko','koshi'],
-  kinMenu:['wsq','momo','banzai'], kinReps:2, kinSets:2, kinKeep:1, kinDefV:2, kinDepth:'normal', kinRest:15, voice:true,
+  kinMenu:['wsq','momo','banzai'], kinReps:2, kinSets:2, kinKeep:1, kinDefV:3, kinDepth:'normal', kinRest:0, voice:true,
   camera:'user', mirror:true, video:'full', model:'full', sound:true
 };
 const MODE_IDS = ['touch','pose','balance','sensei','kabe','rhythm','kintore'];
@@ -281,7 +281,9 @@ try{
   const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
   if(s && typeof s === 'object'){
     // 筋トレの 初期値を かえたので、前に 保存された 回数・キープは あたらしい 初期値に する
-    if(s.kinDefV !== 2){ delete s.kinReps; delete s.kinKeep; s.kinDefV = 2; }
+    if(!(s.kinDefV >= 2)){ delete s.kinReps; delete s.kinKeep; }
+    if(!(s.kinDefV >= 3)){ delete s.kinRest; }
+    s.kinDefV = 3;
     S = Object.assign({}, DEF, s);
   }
 }catch(e){}
@@ -1957,11 +1959,12 @@ function glowSprite(color){
 }
 
 /* ================= 描画 ================= */
-function canvasLabel(text, x, y, size, fill, stroke, maxW){
-  ctx.save(); ctx.font='700 '+Math.round(size)+'px "BIZ UDPGothic", sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  if(maxW){ const w = ctx.measureText(text).width; if(w > maxW){ size = size*maxW/w; ctx.font='700 '+Math.round(size)+'px "BIZ UDPGothic", sans-serif'; } }
-  ctx.lineJoin='round'; ctx.lineWidth=Math.max(4, size*0.22); ctx.strokeStyle=stroke||'rgba(255,255,255,0.95)';
-  ctx.strokeText(text, x, y); ctx.fillStyle=fill; ctx.fillText(text, x, y); ctx.restore();
+function canvasLabel(text, x, y, size, fill, stroke, maxW, c){
+  c = c || ctx;
+  c.save(); c.font='700 '+Math.round(size)+'px "BIZ UDPGothic", sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  if(maxW){ const w = c.measureText(text).width; if(w > maxW){ size = size*maxW/w; c.font='700 '+Math.round(size)+'px "BIZ UDPGothic", sans-serif'; } }
+  c.lineJoin='round'; c.lineWidth=Math.max(4, size*0.22); c.strokeStyle=stroke||'rgba(255,255,255,0.95)';
+  c.strokeText(text, x, y); c.fillStyle=fill; c.fillText(text, x, y); c.restore();
 }
 function drawSkeleton(lm, color, alpha, lw){
   ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap='round';
@@ -1977,24 +1980,26 @@ function drawSkeleton(lm, color, alpha, lw){
   ctx.restore();
 }
 // 手の マーク（てのひら＋ゆび）。mirror：左手は ゆびの むきを はんたいに
-function handGlyph(x, y, s, flip){
-  ctx.save(); ctx.translate(x, y); ctx.scale(flip ? -1 : 1, 1);
-  ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#FFFFFF'; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.ellipse(0, s*0.18, s*0.36, s*0.34, 0, 0, Math.PI*2); ctx.fill();
-  ctx.lineWidth = s*0.17;
+function handGlyph(x, y, s, flip, c){
+  c = c || ctx;
+  c.save(); c.translate(x, y); c.scale(flip ? -1 : 1, 1);
+  c.fillStyle = '#FFFFFF'; c.strokeStyle = '#FFFFFF'; c.lineCap = 'round';
+  c.beginPath(); c.ellipse(0, s*0.18, s*0.36, s*0.34, 0, 0, Math.PI*2); c.fill();
+  c.lineWidth = s*0.17;
   const f = [[-0.24,-0.62],[-0.08,-0.72],[0.08,-0.7],[0.23,-0.58]];
-  ctx.beginPath(); f.forEach(([fx,fy],i)=>{ const bx = (-0.24 + i*0.16)*s; ctx.moveTo(bx, 0); ctx.lineTo(fx*s, fy*s); }); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-0.28*s, 0.2*s); ctx.lineTo(-0.58*s, -0.08*s); ctx.stroke();
-  ctx.restore();
+  c.beginPath(); f.forEach(([fx,fy],i)=>{ const bx = (-0.24 + i*0.16)*s; c.moveTo(bx, 0); c.lineTo(fx*s, fy*s); }); c.stroke();
+  c.beginPath(); c.moveTo(-0.28*s, 0.2*s); c.lineTo(-0.58*s, -0.08*s); c.stroke();
+  c.restore();
 }
 // 足の マーク（あしうら＋ゆび）
-function footGlyph(x, y, s, flip){
-  ctx.save(); ctx.translate(x, y); ctx.scale(flip ? -1 : 1, 1);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath(); ctx.ellipse(0.02*s, 0.16*s, s*0.27, s*0.46, -0.12, 0, Math.PI*2); ctx.fill();
+function footGlyph(x, y, s, flip, c){
+  c = c || ctx;
+  c.save(); c.translate(x, y); c.scale(flip ? -1 : 1, 1);
+  c.fillStyle = '#FFFFFF';
+  c.beginPath(); c.ellipse(0.02*s, 0.16*s, s*0.27, s*0.46, -0.12, 0, Math.PI*2); c.fill();
   const toes = [[-0.2,-0.42,0.12],[-0.02,-0.5,0.1],[0.13,-0.47,0.085],[0.25,-0.4,0.075],[0.33,-0.3,0.065]];
-  toes.forEach(([tx,ty,tr])=>{ ctx.beginPath(); ctx.arc(tx*s, ty*s, tr*s, 0, Math.PI*2); ctx.fill(); });
-  ctx.restore();
+  toes.forEach(([tx,ty,tr])=>{ c.beginPath(); c.arc(tx*s, ty*s, tr*s, 0, Math.PI*2); c.fill(); });
+  c.restore();
 }
 function drawTarget(pl, task, t, now){
   const color = partColor(pl, t.part);
@@ -2056,15 +2061,34 @@ function drawGhostOn(c, g, lw, color, alpha, solid){
 // こしの めやす：ここまで こしを 下げると よい 線と、いまの こしの 位置
 function drawHipGuide(pl, task, lw){
   const B = pl.b, y = B.refHipY + task.hipDrop, w = B.sw*1.6, x0 = B.cx - w, x1 = B.cx + w;
-  const ok = !!task.hipOK, col = ok ? '#1FA85A' : '#5A6878';
+  const ok = !!task.hipOK, col = ok ? '#1FA85A' : '#5A6878', belt = ok ? '#1FA85A' : '#F07A18';
+  const fs = Math.max(22, MIN*0.04);
+  // ここまで さげる 線
   ctx.save();
   ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = lw*2; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
   ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash([lw*2.5, lw*2]);
   ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke(); ctx.setLineDash([]);
-  if(B.hipY!=null){ ctx.beginPath(); ctx.arc(B.cx, B.hipY, lw*2.2, 0, Math.PI*2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = lw*0.8; ctx.strokeStyle = '#FFFFFF'; ctx.stroke(); }
   ctx.restore();
-  canvasLabel(ok ? 'こし OK' : 'こしを ここまで', x1 + Math.max(60, MIN*0.08), y, Math.max(20, MIN*0.035), col);
+  canvasLabel(ok ? 'OK！' : 'ここまで', x1 + fs*2.2, y, fs, col);
+  if(B.hipY==null) return;
+  // いまの こし（ベルトのような 太い 線）
+  const bw = B.sw*0.55, hy = B.hipY;
+  ctx.save(); ctx.lineCap = 'round';
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = lw*4.2;
+  ctx.beginPath(); ctx.moveTo(B.cx - bw, hy); ctx.lineTo(B.cx + bw, hy); ctx.stroke();
+  ctx.strokeStyle = belt; ctx.lineWidth = lw*3;
+  ctx.beginPath(); ctx.moveTo(B.cx - bw, hy); ctx.lineTo(B.cx + bw, hy); ctx.stroke();
+  // 下むきの やじるし
+  if(!ok && y - hy > lw*8){
+    const ax = B.cx - bw - fs*1.1, top = hy + lw*2, bot = y - lw*2, hw = lw*2.6;
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = lw*2.4;
+    ctx.beginPath(); ctx.moveTo(ax, top); ctx.lineTo(ax, bot); ctx.moveTo(ax-hw, bot-hw); ctx.lineTo(ax, bot); ctx.lineTo(ax+hw, bot-hw); ctx.stroke();
+    ctx.strokeStyle = belt; ctx.lineWidth = lw*1.2;
+    ctx.beginPath(); ctx.moveTo(ax, top); ctx.lineTo(ax, bot); ctx.moveTo(ax-hw, bot-hw); ctx.lineTo(ax, bot); ctx.lineTo(ax+hw, bot-hw); ctx.stroke();
+  }
+  ctx.restore();
+  canvasLabel('こし', B.cx - bw - fs*1.1, hy - fs*0.9, fs, belt);
 }
 let wallCv = null;
 function drawWall(pl, task){
@@ -2096,9 +2120,17 @@ function drawWall(pl, task){
   g.globalCompositeOperation = 'source-over';
   for(const t of task.tg){
     const col = partColor(pl, t.part);
-    g.beginPath(); g.arc(t.x, t.y, t.r*1.05, 0, Math.PI*2);
-    if(t.cov){ g.fillStyle = col+'66'; g.fill(); }
-    g.lineWidth = Math.max(5, t.r*0.14); g.strokeStyle = col; g.stroke();
+    g.save(); g.globalAlpha = t.cov ? 1 : 0.85;
+    g.beginPath(); g.arc(t.x, t.y, t.r*1.05, 0, Math.PI*2); g.fillStyle = col; g.fill();
+    g.lineWidth = Math.max(5, t.r*0.12); g.strokeStyle = t.cov ? '#FFF7C2' : '#FFFFFF'; g.stroke();
+    g.restore();
+    const flip = t.s==='L' ? (sdirDraw(pl)>0) : (sdirDraw(pl)<0);
+    if(t.k==='H') handGlyph(t.x, t.y, t.r*0.82, flip, g);
+    else if(t.k==='F') footGlyph(t.x, t.y, t.r*0.8, flip, g);
+    const fs = Math.max(20, Math.min(MIN*0.045, t.r*0.5));
+    if(t.k==='D') canvasLabel('あたま', t.x, t.y, t.r*0.42, '#FFFFFF', 'rgba(0,0,0,0.25)', null, g);
+    const ly = t.y + t.r*1.05 + fs*0.85 < H ? t.y + t.r*1.05 + fs*0.85 : t.y - t.r*1.05 - fs*0.85;
+    canvasLabel(t.k==='D' ? 'しゃがむ' : PART_JP[t.part], t.x, ly, fs, col, null, null, g);
   }
   ctx.save(); ctx.globalAlpha = a; ctx.drawImage(wallCv, 0, 0, cw, chh, 0, 0, W, H); ctx.restore();
 }
